@@ -685,3 +685,31 @@ AEOS 的所有开发组件与核心 OS 均遵循语义化版本命名规范 `vMA
    - 若无冲突，智能体直接使用代码修改工具，将用户在右侧面板的最新批注合并写入本地项目路径对应的原始文件中。
    - 合并完成后，自动运行 `git add` 和 `git commit -m "docs(review): sync user feedback modifications from artifact review"`，确保批改被版本化记录。
 
+---
+
+## 四、 通用文件级交互评审与双向同步协议 (Generic File-based Review & Sync Protocol)
+
+对于不支持原生 Artifact 右侧拆分面板的通用 AI 客户端（如 ChatGPT / Codex Web 端，或使用纯 API 调用的三方智能体，以及 Claude 客户端），AEOS 规定使用**文件级交互评审管道**来实现双向同步：
+
+### 1. 通用评审媒介文件定义
+- 本地评审媒介文件固定为项目根目录下的 [memory/REVIEW_FEEDBACK.md](file:///d:/vibecoding/aeos/memory/REVIEW_FEEDBACK.md)。
+- 如果该文件不存在，智能体在开始重要任务前应自动创建该文件，并使用以下模板作为引导：
+  ```markdown
+  # AEOS 交互评审反馈单 (REVIEW_FEEDBACK)
+  
+  请开发者在此处写下对当前代码、设计方案的修改意见、代码批注或直接修改建议。
+  
+  ## 📝 您的反馈意见：
+  - [请在此处书写...]
+  ```
+
+### 2. 用户批注交互流程
+1. **智能体提交提议**：智能体将编写的代码或设计草案提交给用户，并在 [memory/REVIEW_FEEDBACK.md](file:///d:/vibecoding/aeos/memory/REVIEW_FEEDBACK.md) 中写入待评审的主要改动点。
+2. **用户本地修改**：开发者在本地 IDE 中直接打开并修改该文件（或在里面写下具体修改要求）。
+3. **通知智能体**：用户在聊天界面发送“已批改”或“已更新反馈”等指令。
+4. **智能体读取并回流**：
+   - 智能体读取 [memory/REVIEW_FEEDBACK.md](file:///d:/vibecoding/aeos/memory/REVIEW_FEEDBACK.md) 文件的最新内容。
+   - 解析用户的修改意见，对本地项目源码进行对应修改。
+   - 修改完成后，自动执行 Git 提交，并将 [memory/REVIEW_FEEDBACK.md](file:///d:/vibecoding/aeos/memory/REVIEW_FEEDBACK.md) 重置或标记为“已处理”，保持下一次同步的干净状态。
+
+

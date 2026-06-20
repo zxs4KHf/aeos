@@ -59,6 +59,35 @@
         "standards/testing_standard.md",
         "standards/security_standard.md"
       ]
+    },
+    {
+      "platform": "chatgpt",
+      "target": "dist/chatgpt_system.md",
+      "sources": [
+        "constitution/constitution.md",
+        "standards/coding_standard.md",
+        "standards/documentation_standard.md",
+        "standards/git_standard.md",
+        "standards/testing_standard.md",
+        "standards/architecture_standard.md",
+        "standards/security_standard.md",
+        "standards/performance_standard.md",
+        "standards/logging_standard.md",
+        "standards/dependency_standard.md",
+        "standards/versioning_standard.md"
+      ]
+    },
+    {
+      "platform": "codex",
+      "target": "dist/codex_system.md",
+      "sources": [
+        "constitution/constitution.md",
+        "standards/coding_standard.md",
+        "standards/git_standard.md",
+        "standards/testing_standard.md",
+        "standards/security_standard.md",
+        "standards/performance_standard.md"
+      ]
     }
   ]
 }
