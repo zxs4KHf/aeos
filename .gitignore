@@ -1,0 +1,33 @@
+# AEOS Project Git Ignore
+
+# Log files
+*.log
+logs/
+scratch/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Runtime files
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Local databases & configurations
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+.env
+.env.local
+
+# IDE/VS Code configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
