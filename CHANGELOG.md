@@ -2,6 +2,16 @@
 
 所有 AI Engineering OS (AEOS) 的版本发布与核心演进在此持久化记录。
 
+## [v0.6.0-alpha] - 2026-06-20
+
+### 🚀 新增 (Added)
+- **过程工作流 (`workflows/`)**：新增并制定了 3 大研发过程工作流 SOP：
+  - **研发全生命周期工作流 (`development_workflow.md`)**：编排了从上下文加载（Designing）、开发编码（Coding）、自检测试（Testing）、联合评审（Reviewing）到版本发布与记忆归档的完整闭环。
+  - **故障排查与复盘工作流 (`incident_response_workflow.md`)**：规范了故障检测、5分钟紧急止血防御（Mitigation）、5 Whys 根因定位、根治修复与无指责复盘（Postmortem）。
+  - **联合评审与双向同步工作流 (`review_sync_workflow.md`)**：设计了镜像推送（Mirror Push）、侧边分栏编辑（Split Pane Review）与合并防冲突回流机制（Reverse Sync）。
+
+---
+
 ## [v0.5.0-alpha] - 2026-06-20
 
 ### 🚀 新增 (Added)
