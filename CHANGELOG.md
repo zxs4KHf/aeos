@@ -2,6 +2,16 @@
 
 所有 AI Engineering OS (AEOS) 的版本发布与核心演进在此持久化记录。
 
+## [v0.7.0-alpha] - 2026-06-20
+
+### 🚀 新增 (Added)
+- **平台适配器 (`adapters/`)**：正式落地平台无关规则的编译与构建系统：
+  - **构建配置文件 (`config.json`)**：声明了针对 Antigravity, Cursor, Claude Code, Cline 四大开发平台规则包的源文件提取路径和生成目标。
+  - **编译引擎脚本 (`compiler.js`)**：编写了可执行编译构建 Node 脚本。支持解析命令行平台参数，实现了多平台规则的自动化拼接与独立头部元数据分发。
+  - **编译生成产物 (`dist/`)**：通过自动化管道成功编译生成了统一的 `dist/AGENTS.md`, `dist/.cursorrules`, `dist/.clauderules`, `dist/.clinerules` 四大平台专用规则。
+
+---
+
 ## [v0.6.0-alpha] - 2026-06-20
 
 ### 🚀 新增 (Added)

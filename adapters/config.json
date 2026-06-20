@@ -1,0 +1,64 @@
+{
+  "pipelines": [
+    {
+      "platform": "antigravity",
+      "target": "dist/AGENTS.md",
+      "sources": [
+        "constitution/constitution.md",
+        "standards/coding_standard.md",
+        "standards/documentation_standard.md",
+        "standards/git_standard.md",
+        "standards/testing_standard.md",
+        "standards/architecture_standard.md",
+        "standards/security_standard.md",
+        "standards/performance_standard.md",
+        "standards/logging_standard.md",
+        "standards/dependency_standard.md",
+        "standards/versioning_standard.md",
+        "workflows/development_workflow.md",
+        "workflows/incident_response_workflow.md",
+        "workflows/review_sync_workflow.md"
+      ]
+    },
+    {
+      "platform": "cursor",
+      "target": "dist/.cursorrules",
+      "sources": [
+        "constitution/constitution.md",
+        "standards/coding_standard.md",
+        "standards/documentation_standard.md",
+        "standards/git_standard.md",
+        "standards/testing_standard.md",
+        "standards/architecture_standard.md",
+        "standards/security_standard.md",
+        "standards/performance_standard.md",
+        "standards/logging_standard.md",
+        "standards/dependency_standard.md",
+        "standards/versioning_standard.md"
+      ]
+    },
+    {
+      "platform": "claudecode",
+      "target": "dist/.clauderules",
+      "sources": [
+        "constitution/constitution.md",
+        "standards/coding_standard.md",
+        "standards/git_standard.md",
+        "standards/testing_standard.md",
+        "standards/security_standard.md"
+      ]
+    },
+    {
+      "platform": "cline",
+      "target": "dist/.clinerules",
+      "sources": [
+        "constitution/constitution.md",
+        "standards/coding_standard.md",
+        "standards/documentation_standard.md",
+        "standards/git_standard.md",
+        "standards/testing_standard.md",
+        "standards/security_standard.md"
+      ]
+    }
+  ]
+}
