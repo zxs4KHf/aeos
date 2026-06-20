@@ -2,6 +2,20 @@
 
 所有 AI Engineering OS (AEOS) 的版本发布与核心演进在此持久化记录。
 
+## [v1.0.0] - 2026-06-20
+
+### 🚀 新增 (Added)
+- **正式稳定版发布 (v1.0.0 Release)**：完成了 AI Engineering OS (AEOS) 规范的全部核心模块落地，可作为跨 Agent、跨平台的统一软件工程规范基础设施：
+  - **核心宪章与身份**：树立智能体 Founder/Architect/Staff 联合研发身份，固化 L0-L7 安全层级与 DoD 准入。
+  - **工程标准全集**：制定了代码、文档、Git、测试、架构、安全、性能、日志、依赖与版本 10 大标准规范。
+  - **开发手册 SOP**：提供了 Bot、Web 前端与 CLI 命令行工具三大技术栈的最佳实践物理结构与流程。
+  - **交付物统一模板**：固化了 PRD、Architecture、ADR、RFC、Postmortem 等 5 大开发交互文档格式。
+  - **过程工作流控制**：编排了研发全生命周期、故障应急响应与 Artifact 联合分栏评审双向同步 3 大 SOP 动作流。
+  - **适配器编译引擎**：提供 `compiler.js` 参数化构建管道，自动打包分发生成面向 Antigravity, Cursor, Claude Code, Cline 的本地编译规则。
+  - **记忆上下文系统**：设计了静态（Context, Architecture）与动态（Debt, Lessons, Decisions）的上下文内存装载协议。
+
+---
+
 ## [v0.8.0-alpha] - 2026-06-20
 
 ### 🚀 新增 (Added)
