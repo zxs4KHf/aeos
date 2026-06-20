@@ -36,7 +36,7 @@ AEOS 坚守“高内聚、低耦合”的模块设计。各个组件的依赖流
 
 - **`constitution/`**：描述 Agent 的核心身份界定、L0-L7 安全审批边界以及 DoD (Definition of Done)。属于高稳定级别模块，改动需提交 RFC 评审。
 - **`standards/`**：规定基础代码风格、单元测试要求、Conventional Commits 规范及文档注释标准。不含平台和 Agent 的特定痕迹。
-- **`playbooks/`**：特定技术栈环境（如 Web 前端、Feishu Bot、Python CLI）的架构推荐与测试/部署标准操作程序 (SOP)。
+- **`playbooks/`**：特定技术栈环境（如 Web App, Node.js 后端, CLI 工具）的架构推荐与测试/部署标准操作程序 (SOP)。
 - **`templates/`**：固化日常产出文档的格式，避免信息缺漏。
 - **`workflows/`**：编排 Agent 的行为步骤。指示 Agent 如何完成“方案设计 -> 代码修改 -> 自检运行 -> 提交记录”的生命周期闭环。
 - **`adapters/`**：编译模块。读取并拼接上述各模块的 Markdown 标准，翻译为各个客户端（Antigravity, Claude Code, Cursor, Cline）能原理解析的专用提示词规则文件。

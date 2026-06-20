@@ -68,15 +68,16 @@ node adapters/compiler.js --platform cursor
 
 ### 第三步：部署应用到您的开发项目
 
-AEOS 支持**智能 Agent 自动部署**与**命令行一键部署**。
+AEOS 规范部署极为简单，支持**智能 Agent 自动部署**与**命令行/手动拷贝部署**。绝大多数 AI 智能体均有能力直接通过读取本地规则文件或分析您的 GitHub 仓库来掌握这套规范。
 
 #### 选项 A：智能 Agent 自然语言一键接入 (推荐 🌟)
-如果您正在与已接入 AEOS 规范的 AI 智能体 (如 Antigravity, Cursor, Cline) 对话，您甚至不需要手动运行任何命令，直接通过自然语言对 Agent 提要求即可：
-> 💬 **用户**：帮我把本地项目 `D:/my-project` 接入 AEOS 规范，平台使用 cursor。
+主流的 AI 智能体/开发助手（如 Cursor, Claude, Cline, Codex, Antigravity 等）拥有读取项目文件和执行本地脚本的能力。您只需在对话中用自然语言对 Agent 提要求，它们就会自动帮您接入。例如：
+
+> 💬 **用户**：请帮我将项目 `D:/my-new-project` 接入 AEOS 规范，规则适配 cursor。
 > 
-> 🤖 **Agent**：会自动在后台运行一键接入脚本完成部署：
-> `node <AEOS_Path>/adapters/integrator.js --path "D:/my-project" --platform cursor`
-> 并在目标目录下生成规则文件且初始化 `memory/` 模板。
+> 🤖 **Agent**：在读取本规范的《工程宪章》后，会自动在后台定位并执行 AEOS 一键接入工具：
+> `node <AEOS_Path>/adapters/integrator.js --path "D:/my-new-project" --platform cursor`
+> 自动在新项目根目录下分发 `.cursorrules` 文件并初始化 `memory/` 模板目录。
 
 你也可以在 AEOS 项目根目录下手动运行命令执行一键接入：
 ```bash
@@ -89,13 +90,13 @@ node adapters/integrator.js --path "D:/projects/my-new-app" --platform cursor
 您也可以手动将编译生成的规则文件复制到目标项目的对应位置：
 1. **对于 Cursor 辅助的项目**：
    将 `dist/.cursorrules` 复制到目标项目的根目录下。
-2. **对于 Antigravity (Feishu Bot) 辅助的项目**：
+2. **对于 Antigravity 辅助的项目**：
    将 `dist/AGENTS.md` 复制到目标项目工作区的 `.agents/AGENTS.md`，或者放置于全局配置目录 `C:\Users\14841\.gemini\config\AGENTS.md`。
 3. **对于 Cline / Claude Code 辅助的项目**：
    分别将 `dist/.clinerules` / `dist/.clauderules` 复制到目标项目的根目录下。
 4. **对于 Codex 辅助的项目**：
    将 `dist/codex_system.md` 复制到目标项目的根目录下，并命名为 `AGENTS.md`。
-5. **对于其他直接使用 ChatGPT API 等自定义智能体/脚本**：
+5. **对于其他直接使用 ChatGPT / Claude API 等自定义智能体/脚本**：
    在代码中直接读取 `dist/chatgpt_system.md`，并将其作为 System Message 传入（参见下方示例）。
 
 部署完成后，对应的 AI 智能体在接管该项目进行开发时，便会自动加载并强制执行这套 AEOS 软件工程规范。
