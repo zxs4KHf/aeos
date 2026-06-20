@@ -74,8 +74,10 @@ node adapters/compiler.js --platform cursor
    将 `dist/AGENTS.md` 复制到目标项目工作区的 `.agents/AGENTS.md`，或者放置于全局配置目录 `C:\Users\14841\.gemini\config\AGENTS.md`。
 3. **对于 Cline / Claude Code 辅助的项目**：
    分别将 `dist/.clinerules` / `dist/.clauderules` 复制到目标项目的根目录下。
-4. **对于直接使用 ChatGPT / Codex API 的自定义智能体**：
-   在 API 调用中，读取并作为 `system` 角色消息传入（参见下方示例）。
+4. **对于 Codex 辅助的项目**：
+   将 `dist/codex_system.md` 复制到目标项目的根目录下，并命名为 `AGENTS.md`。
+5. **对于其他直接使用 ChatGPT API 等自定义智能体/脚本**：
+   在代码中直接读取 `dist/chatgpt_system.md`，并将其作为 System Message 传入（参见下方示例）。
 
 部署完成后，对应的 AI 智能体在接管该项目进行开发时，便会自动加载并强制执行这套 AEOS 软件工程规范。
 
