@@ -67,7 +67,26 @@ node adapters/compiler.js --platform cursor
 - **Codex API** -> `dist/codex_system.md`
 
 ### 第三步：部署应用到您的开发项目
-将编译生成的规则文件复制到您需要规范的开发项目的根目录或配置目录下：
+
+AEOS 支持**智能 Agent 自动部署**与**命令行一键部署**。
+
+#### 选项 A：智能 Agent 自然语言一键接入 (推荐 🌟)
+如果您正在与已接入 AEOS 规范的 AI 智能体 (如 Antigravity, Cursor, Cline) 对话，您甚至不需要手动运行任何命令，直接通过自然语言对 Agent 提要求即可：
+> 💬 **用户**：帮我把本地项目 `D:/my-project` 接入 AEOS 规范，平台使用 cursor。
+> 
+> 🤖 **Agent**：会自动在后台运行一键接入脚本完成部署：
+> `node <AEOS_Path>/adapters/integrator.js --path "D:/my-project" --platform cursor`
+> 并在目标目录下生成规则文件且初始化 `memory/` 模板。
+
+你也可以在 AEOS 项目根目录下手动运行命令执行一键接入：
+```bash
+node adapters/integrator.js --path "<target_project_path>" --platform <platform_name>
+# 例如：
+node adapters/integrator.js --path "D:/projects/my-new-app" --platform cursor
+```
+
+#### 选项 B：手动拷贝部署
+您也可以手动将编译生成的规则文件复制到目标项目的对应位置：
 1. **对于 Cursor 辅助的项目**：
    将 `dist/.cursorrules` 复制到目标项目的根目录下。
 2. **对于 Antigravity (Feishu Bot) 辅助的项目**：

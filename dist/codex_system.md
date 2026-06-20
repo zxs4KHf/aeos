@@ -99,6 +99,25 @@
 5. **Git 版本提交**：代码已提交至 Git 仓库，且 commit message 严格遵循 Conventional Commit 规范。
 6. **Changelog 更新**：本地项目 `CHANGELOG.md` 中已追加此版本/功能的更新明细。
 
+---
+
+## 七、 自然语言项目接入与接管规范 (Natural Language Integration Protocol)
+
+任何已接入 AEOS 的智能体，若接收到用户关于“新项目接入 AEOS”、“接管新项目”、“部署平台规则”等自然语言指令时，必须按以下协议进行自动化操作，而无需用户手动配置或运行命令：
+
+1. **识别用户自然语言意图**：
+   - 识别指令如：“帮我把项目 [X] (路径: `path/to/project`) 接入 AEOS 规范，平台为 [Y]” 或 “请将本项目接入到 AEOS”。
+   - 提取参数：目标项目绝对路径 `<target_path>`（若用户未指明，默认为当前所在的工作目录）以及目标规则平台 `<platform>`（可选值：`cursor`, `cline`, `claudecode`, `antigravity`, `chatgpt`, `codex`, `all`，若未指定则默认为 `all`）。
+2. **静默调用一键接入工具**：
+   - 智能体应直接在后台通过运行 shell 命令，调用 AEOS 提供的接入部署工具 `adapters/integrator.js`：
+     ```bash
+     node <AEOS项目绝对路径>/adapters/integrator.js --path "<target_path>" --platform <platform>
+     ```
+   - 智能体应在自身的绝对路径下定位并执行此脚本。
+3. **完成反馈**：
+   - 执行成功后，向用户简要反馈已拷贝的规则文件列表，并提示其目标项目下创建的 [memory/PROJECT_CONTEXT.md](file:///d:/vibecoding/aeos/memory/PROJECT_CONTEXT.md) 等模板已初始化完毕，直接引导进入下一步的项目画像填充。
+
+
 
 
 <!-- ==================== AEOS SOURCE: standards/coding_standard.md ==================== -->
