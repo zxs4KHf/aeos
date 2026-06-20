@@ -38,8 +38,48 @@ AEOS/
 
 ---
 
+## 🚀 快速上手与使用教程
+
+AEOS 的核心逻辑是：**“核心规范独立维护，平台规则一键编译，目标项目拷贝部署”**。
+
+### 第一步：修改核心规范
+请勿直接编辑 `dist/` 目录下的规则文件，因为它们在下一次编译时会被覆盖。
+如果需要新增或修改开发标准（如代码风格、Git提交规范等），请直接在对应的源文件中修改：
+- 宪章规范：[constitution/constitution.md](file:///d:/vibecoding/aeos/constitution/constitution.md)
+- 各种标准：[standards/](file:///d:/vibecoding/aeos/standards) 目录下的对应 Markdown 文件
+- 工作流规范：[workflows/](file:///d:/vibecoding/aeos/workflows) 目录下的对应 Markdown 文件
+
+### 第二步：编译平台规则
+在 AEOS 项目根目录下，运行适配器编译器以生成对应平台专属的规则文件：
+```bash
+# 编译所有平台的规则文件
+node adapters/compiler.js --platform all
+
+# 仅编译指定平台的规则（如 cursor, cline, claudecode, antigravity）
+node adapters/compiler.js --platform cursor
+```
+编译成功后，将在 [dist/](file:///d:/vibecoding/aeos/dist) 目录下生成对应的规则文件：
+- **Antigravity** -> `dist/AGENTS.md`
+- **Cursor** -> `dist/.cursorrules`
+- **Cline** -> `dist/.clinerules`
+- **Claude Code** -> `dist/.clauderules`
+
+### 第三步：部署应用到您的开发项目
+将编译生成的规则文件复制到您需要规范的开发项目的根目录或配置目录下：
+1. **对于 Cursor 辅助的项目**：
+   将 `dist/.cursorrules` 复制到目标项目的根目录下。
+2. **对于 Antigravity (Feishu Bot) 辅助的项目**：
+   将 `dist/AGENTS.md` 复制到目标项目工作区的 `.agents/AGENTS.md`，或者放置于全局配置目录 `C:\Users\14841\.gemini\config\AGENTS.md`。
+3. **对于 Cline / Claude Code 辅助的项目**：
+   分别将 `dist/.clinerules` / `dist/.clauderules` 复制到目标项目的根目录下。
+
+部署完成后，对应的 AI 智能体在接管该项目进行开发时，便会自动加载并强制执行这套 AEOS 软件工程规范。
+
+---
+
 ## 📄 核心文档索引 (可点击右侧面板实时批改)
 
 - 📜 [AEOS 项目立项与 PRD 定义 (PRD_v0.1.md)](roadmap/PRD_v0.1.md)
 - 🔬 [AEOS 技术与智能体调研报告 (research_v0.1.md)](roadmap/research_v0.1.md)
 - 📐 [AEOS 系统架构与模块设计 (architecture_v0.1.md)](roadmap/architecture_v0.1.md)
+
