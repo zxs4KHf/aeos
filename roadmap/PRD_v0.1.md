@@ -1,88 +1,74 @@
-# 📋 AI Engineering OS (AEOS) v0.1 Product Requirements Document (PRD)
+# 📋 AI Engineering OS (AEOS) v0.1 产品需求文档 (PRD)
 
-This document defines the core product specifications, target features, risk policy, and milestones for **AI Engineering OS (AEOS) v0.1 Foundation**.
-
----
-
-## 1. Vision & Core Rationale
-
-### 1.1 The Problem
-In modern "Vibe Coding" setups, developers face several friction points:
-- **Rule Inconsistency**: Different AI tools (e.g., Cursor, Claude Code, Cline) execute code using their own ad-hoc instructions. Switching agents causes rules to clash or be ignored.
-- **Platform Lock-in**: Prompt configurations are tightly coupled with the host client (e.g., `.cursorrules`), making them useless on other clients.
-- **Uncontrolled Context Swelling**: Prompts grow indefinitely, consuming token budgets and causing context pollution.
-- **Security & Risk Exposure**: Agents are either too constrained (refusing to execute commands) or too free (running destructive actions without human permission).
-
-### 1.2 The Solution
-AEOS establishes a **Platform-Agnostic AI Operating System**. It defines:
-1. A standard folder layout for AI rules, playbooks, and templates.
-2. A structured, self-documenting project memory system.
-3. An adapter translation layer that compiles AEOS rules into client-specific rules.
-4. An L0-L7 authorization framework to govern security and permissions.
+本需求文档定义了 **AI Engineering OS (AEOS) v0.1 Foundation** 版本的核心产品范围、功能规格、安全审批策略及路线图规划。
 
 ---
 
-## 2. Core Features & Functional Specifications
+## 一、 核心痛点与产品愿景
 
-### 2.1 The L0-L7 Authorization & Approval Policy
-Different operations represent different risk levels. AEOS establishes a standardized scale of approval requirements:
+### 1.1 痛点描述
+在基于 AI 的现代化软件开发（Vibe Coding）过程中，缺乏统一的基础规范：
+- **规则碎片化**：不同的 AI 开发客户端（Cursor, Claude Code, Cline 等）各自维护独立的提示词和策略文件，频繁切换导致工程标准断层。
+- **环境强绑定**：现有的规则配置多与具体 IDE 强绑定（如 `.cursorrules`），一旦脱离当前工具就无法复用。
+- **无序的上下文膨胀**：随着工程的推进，注入 Agent 的 Prompt 越来越长，导致 Context Swelling（上下文膨胀），既浪费 Token，又极大降低了 AI 的逻辑准度。
+- **安全与控制失衡**：现有的命令执行和文件修改缺乏多级灰度机制。要么由于过度保护导致 Agent 频繁因权限受阻，要么由于疏于防护导致高危命令直接毁坏本地数据库或云端部署。
 
-| Risk Level | Level Name | Operation Examples | Approval Requirement |
+### 1.2 产品愿景 (Mission)
+构建一套**平台无关、智能体无关**的 AI 软件工程操作系统规范。
+它不直接面向具体的 Prompt 编写，而是制定通用的工程标准目录、上下文内存协议与安全防卫中介。任何 AI 智能体仅需挂载一个“适配器”，即可全自动遵循一致的研发行为规范。
+
+---
+
+## 二、 核心功能规格说明
+
+### 2.1 交互式 Artifact 评审管道 (Interactive Review)
+- **机制定义**：将项目中的核心需求与架构文档自动输出为 Antigravity 沙箱中的用户级 Artifact 文件。
+- **用户行为**：开发者可以直接在 VS Code 的 **“右侧窗口 (Artifacts 拆分面板)”** 对文档进行标记、删除、插入修改或书写批改批注。
+- **智能体响应**：智能体能够感知并差分对比右侧 Artifact 的变化，自动将用户的修改映射回 `d:/vibecoding/aeos/` 的真实 Git 树中，实现实时的联合交互批改。
+
+---
+
+### 2.2 核心安全防线：L0-L7 授权与审批矩阵 (Approval Policy)
+我们设计并确立了如下的多级授权机制，将所有的工程操作按风险程度划分，不再含糊使用“大更新/小更新”描述：
+
+| 风险等级 | 等级名称 | 对应操作示例 | 审批与干预要求 |
 | :--- | :--- | :--- | :--- |
-| **L0** | Read-Only | Reading source code, searching files, directory listing | 🟢 **Fully Auto**: No approval needed. |
-| **L1** | Local Query | Web search, reading documentation links | 🟢 **Fully Auto**: No approval needed. |
-| **L2** | Minor Write | Creating/editing documentation, templates, or markdown logs | 🟢 **Fully Auto**: No approval needed. |
-| **L3** | Safe Refactor | Code format, lint fixes, renaming variables, local compile | 🟢 **Fully Auto**: No approval needed. |
-| **L4** | Major Write | Modifying core codebase logic, editing database schemas | 🟡 **Auto-Heal or Notify**: Auto-executes, but logs must be sent to chat immediately. |
-| **L5** | Command Execution | Running test suites, starting local dev servers | 🟡 **Conditional Approval**: Prompt user for permission once per task. |
-| **L6** | Infrastructure Modify | Modifying environment variables, installing node packages | 🔴 **Strict Approval**: User must explicitly approve in the client UI. |
-| **L7** | High Risk / Release | Pushing code to main branch, deleting database, cloud deploy | 🔴 **Double-Check Approval**: Double confirmation prompt required. |
+| **L0** | Read-Only (只读) | 读取源代码、检索目录树、执行 Grep 匹配 | 🟢 **全自动执行**：无需任何人工干预或提示。 |
+| **L1** | Local Query (网络检索) | 使用搜索引擎、读取网络 API 接口文档 | 🟢 **全自动执行**：无需人工干预。 |
+| **L2** | Minor Write (文档修改) | 创建/编辑 Markdown、书写任务日志与 TODO | 🟢 **全自动执行**：直接写入。 |
+| **L3** | Safe Refactor (安全重构) | 修复 Lint 报错、本地编译命令、代码格式化 | 🟢 **全自动执行**：直接重构与校验。 |
+| **L4** | Major Write (主代码修改) | 修改核心业务逻辑、修改核心数据模型结构 | 🟡 **自动处理+实时推送**：自动修改，但每次完成修改后必须在飞书推送文件变更摘要。 |
+| **L5** | Command Run (命令执行) | 运行项目测试套件、启动本地开发服务器 | 🟡 **条件授权**：在当前 Turn 开始时向用户申请一次命令执行的总授权。 |
+| **L6** | Infra Modify (环境依赖) | 升级修改 `.env` 环境变量、安装 npm 库依赖 | 🔴 **严格审批**：每次执行前必须在 UI 界面由用户点击确认。 |
+| **L7** | High Risk (高危/部署) | 强推 Git 主分支、清空数据库、触发云端部署 | 🔴 **双重确认审批**：除了 UI 点击，还必须由用户在聊天窗口中输入特定确认词。 |
 
 ---
 
-### 2.2 The Structured Memory Schema
-Instead of scanning the whole directory repeatedly, the AI Agent reads and writes to structured memory files in the `memory/` directory:
+### 2.3 结构化上下文内存规范 (Memory Interchange)
+AEOS 不依赖 Agent 对全盘源码的重复暴力扫描，而是维护一套动态与静态分层的 `memory/` 文件组：
 
-- **PROJECT_CONTEXT.md (Static)**: High-level overview, architecture stack, core modules, and business domains.
-- **DECISIONS.md (Versioned)**: An index of ADRs (Architecture Decision Records) detailing technical pivots.
-- **TECHNICAL_DEBT.md (Dynamic)**: Tracking code smells, missing tests, and refactoring items.
-- **LESSONS_LEARNED.md (Dynamic)**: Retrospective logs of past errors, config tricks, and environment pitfalls.
-- **ROADMAP.md (Static)**: Future target milestones and feature checklists.
-
----
-
-### 2.3 Engineering Quality Metrics
-AEOS defines standard metrics to measure the health of a workspace:
-
-- **Documentation Coverage**: Ratio of commented code blocks and documentation files to total codebase size. Target: `> 90%` for key interfaces.
-- **Architecture Health**: Compliance with Hexagonal/SOLID principles, measured by the lack of circular dependencies.
-- **Test Coverage**: Percentage of code statements covered by automated test suites. Target: `> 80%` for business logic.
-- **Memory Integrity**: Sync status of `.md` logs in the `memory/` folder. Must be updated after every release turn.
+- **PROJECT_CONTEXT.md (静态)**：声明项目全局愿景、技术栈、核心模块划分与业务模型架构。
+- **DECISIONS.md (版本化)**：记录项目的 ADR 历史，每一次架构决策与库的引入都清晰可循。
+- **TECHNICAL_DEBT.md (动态)**：由 Agent 动态维护，记录当前残存的代码臭味、未写完的单元测试及重构债务。
+- **LESSONS_LEARNED.md (动态)**：汇总历史踩坑记录、环境变量配置细节以及第三方 API 的调用陷阱，供下一次会话读取。
 
 ---
 
-## 3. Product Roadmap & Milestones
+### 2.4 软件工程指标体系 (Metrics)
+为了度量项目的演进质量，AEOS 至少跟踪并统计以下四项指标：
+- **文档覆盖率 (Documentation Coverage)**：注释与说明文件和代码行数的比率（核心类接口注释目标 `> 90%`）。
+- **架构健康度 (Architecture Health)**：基于模块高内聚低耦合原则，衡量是否存在跨层循环依赖。
+- **测试覆盖率 (Test Coverage)**：业务逻辑的单元测试覆盖比率（目标 `> 80%`）。
+- **内存完整度 (Memory Integrity)**：Memory 系统各 `.md` 文件的内容完整度，在每次 Turn 提交前必须由 Agent 自动刷新。
 
-```mermaid
-gantt
-    title AEOS Version Release Timeline
-    dateFormat  YYYY-MM-DD
-    section Core Specification
-    v0.1 Foundation          :active, 2026-06-20, 2026-06-22
-    v0.2 Constitution        :2026-06-23, 2026-06-25
-    v0.3 Standards           :2026-06-26, 2026-06-30
-    section Adapt & Workflows
-    v0.4 Playbooks           :2026-07-01, 2026-07-05
-    v0.5 Adapters            :2026-07-06, 2026-07-10
-    v0.6 Memory System       :2026-07-11, 2026-07-15
-    section Release
-    v1.0 Stable Release      :2026-07-16, 2026-07-20
-```
+---
 
-- **v0.1 Foundation (Current)**: Finalize Vision, Research, PRD, and High-Level Architecture.
-- **v0.2 Constitution**: Define highest principles, Risk control levels (L0-L7), and definition of done.
-- **v0.3 Standards**: Define coding style, testing rules, Conventional Commits, and Git Flow rules.
-- **v0.4 Playbooks**: Deliver best practices for Web apps, Bots, and CLI tools.
-- **v0.5 Adapters**: Deliver Antigravity Adapter, Claude Code Adapter, and Cursor Adapter.
-- **v0.6 Memory System**: Deliver the JSON/Markdown memory synchronization schema.
-- **v1.0 Stable**: Production deployment and multi-agent compliance validation.
+## 三、 版本路线图 (Roadmap)
+
+- **v0.1 Foundation (当前)**：立项定义，调研分析，输出 PRD、Research 与系统架构基础。
+- **v0.2 Constitution**：细化工程宪章，明确最高控制准则与 DoD（Definition of Done）。
+- **v0.3 Standards**：交付编码风格、Conventional Commits 规范及测试金字塔策略。
+- **v0.4 Playbooks**：输出 Node.js Bot、React 前端及 Python CLI 的通用开发手册。
+- **v0.5 Adapters**：正式开发 Antigravity, Claude Code, Cursor 专属适配器。
+- **v0.6 Memory System**：实现自动同步的 Markdown 读写中间件。
+- **v1.0 Stable**：完成全链路的稳定版交付，实现跨多 Agent 的无缝互连。

@@ -1,126 +1,124 @@
-# 📐 AI Engineering OS (AEOS) v0.1 System Architecture
+# 📐 AI Engineering OS (AEOS) v0.1 系统架构设计说明书
 
-This document describes the structural layout, information flows, integration adapters, and safety middleware design for the **AI Engineering OS (AEOS)**.
-
----
-
-## 1. High-Level Modular Design
-
-AEOS is organized into decoupled, highly cohesive modules. The dependencies flow downwards:
-
-```mermaid
-graph TD
-    Constitution[1. Constitution - Highest Principles] --> Standards[2. Standards - Conventions]
-    Standards --> Playbooks[3. Playbooks - Env Best Practices]
-    Standards --> Templates[4. Templates - File Schemas]
-    Playbooks --> Workflows[5. Workflows - Process Pipelines]
-    Templates --> Workflows
-    
-    Workflows --> Adapters[6. Adapters - Platform Translation]
-    Memory[7. Memory System - Context State] -.-> Workflows
-```
-
-### 1.1 Directory Specification
-
-- **`constitution/`**: Defines identity, core safety, L0-L7 permissions, and verification gates. Highly stable; changes require a formal RFC.
-- **`standards/`**: Maintain individual coding style, testing, logging, and Git conventions. Agent-agnostic.
-- **`playbooks/`**: Specific stack/environment cookbooks (e.g., Node.js bot playbook, React playbook). Inherits `standards/`.
-- **`templates/`**: File structures (PRDs, ADRs, Postmortems). Ensure standard information layout.
-- **`workflows/`**: Process steps (Task Breakdown -> Coding -> Test -> Review -> Commit). Directs how the agent transitions from one task status to another.
-- **`adapters/`**: The translation module. Compiles the markdown definitions from `constitution`, `standards`, etc., into format-compliant files for Cursor (`.cursorrules`), Cline (`.clinerules`), Antigravity (`AGENTS.md`), etc.
-- **`memory/`**: Dynamic workspace log repository. Stores structured facts, known bugs, decisions, and technical debt.
+本说明书详细阐述了 **AI Engineering OS (AEOS)** 的系统解耦模型、目录规范、适配器翻译架构（Adapter Layer）以及用于交互式评审与内存交换的数据流设计。
 
 ---
 
-## 2. Adapter Translation Mechanism
+## 一、 系统模块解耦拓扑
 
-AEOS is platform-independent. Adapters act as compiler drivers that bundle the core rules and generate target configurations.
+AEOS 坚守“高内聚、低耦合”的模块设计。各个组件的依赖流动方向单向向下：
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│                       AEOS Core Config                      │
-│ (constitution/standards/workflows/templates/playbooks)      │
-└──────────────────────────────┬──────────────────────────────┘
-                               │
-                ┌──────────────┴──────────────┐
-                ▼                             ▼
-       ┌────────────────┐            ┌────────────────┐
-       │   Cursor rule  │            │  Antigravity   │
-       │   generator    │            │   formatter    │
-       └────────┬───────┘            └────────┬───────┘
-                ▼                             ▼
-       ┌────────────────┐            ┌────────────────┐
-       │  .cursorrules  │            │   AGENTS.md    │
-       │  (JSON/text)   │            │   (Markdown)   │
-       └────────────────┘            └────────────────┘
+  ┌────────────────────────────────────────────────────────┐
+  │         1. Constitution (工程宪章) - 最高控制原则       │
+  └───────────────────────────┬────────────────────────────┘
+                              │
+  ┌───────────────────────────▼────────────────────────────┐
+  │         2. Standards (工程标准) - 通用代码/规范         │
+  └─────────────┬────────────────────────────┬─────────────┘
+                │                            │
+  ┌─────────────▼─────────────┐┌─────────────▼─────────────┐
+  │ 3. Playbooks (开发手册)   ││ 4. Templates (规范模板)    │
+  └─────────────┬─────────────┘└─────────────┬─────────────┘
+                │                            │
+                └─────────────┬──────────────┘
+                              │
+  ┌───────────────────────────▼────────────────────────────┐
+  │         5. Workflows (过程工作流) - 动作流控制          │
+  └───────────────────────────┬────────────────────────────┘
+                              │
+  ┌───────────────────────────▼────────────────────────────┐
+  │         6. Adapters (平台适配器) - 翻译与对接层         │
+  └────────────────────────────────────────────────────────┘
 ```
 
-### 2.1 The Adapter Schema (DSL Concept)
-A typical adapter maps core files to specific outputs:
+### 1.1 目录职责详解
+
+- **`constitution/`**：描述 Agent 的核心身份界定、L0-L7 安全审批边界以及 DoD (Definition of Done)。属于高稳定级别模块，改动需提交 RFC 评审。
+- **`standards/`**：规定基础代码风格、单元测试要求、Conventional Commits 规范及文档注释标准。不含平台和 Agent 的特定痕迹。
+- **`playbooks/`**：特定技术栈环境（如 Web 前端、Feishu Bot、Python CLI）的架构推荐与测试/部署标准操作程序 (SOP)。
+- **`templates/`**：固化日常产出文档的格式，避免信息缺漏。
+- **`workflows/`**：编排 Agent 的行为步骤。指示 Agent 如何完成“方案设计 -> 代码修改 -> 自检运行 -> 提交记录”的生命周期闭环。
+- **`adapters/`**：编译模块。读取并拼接上述各模块的 Markdown 标准，翻译为各个客户端（Antigravity, Claude Code, Cursor, Cline）能原理解析的专用提示词规则文件。
+- **`memory/`**：存储当前的运行上下文、决策树（ADR）、技术债务及踩坑经验日志（Lessons Learned）。
+
+---
+
+## 二、 适配器编译与翻译机制 (Adapters)
+
+AEOS 的 Core Specifications 保持 100% 平台无关。通过适配器将 Core 规则“编译”输出到特定平台的目标文件中：
+
+```text
+┌────────────────────────────────────────┐
+│             AEOS Core 核心             │
+│ (Constitution + Standards + Templates) │
+└───────────────────┬────────────────────┘
+                    │
+           ┌────────┴────────┐
+           ▼                 ▼
+    ┌─────────────┐   ┌─────────────┐
+    │  Cursor     │   │ Antigravity │
+    │  Adapter    │   │  Adapter    │
+    └──────┬──────┘   └──────┬──────┘
+           ▼                 ▼
+    ┌─────────────┐   ┌─────────────┐
+    │.cursorrules │   │  AGENTS.md  │
+    │ (JSON配置)  │   │(工作区配置文件)│
+    └─────────────┘   └─────────────┘
+```
+
+### 2.1 适配器映射模型设计
+我们设计了通用的 Adapter 映射 DSL。以下为适配器映射的结构意向：
 ```json
 {
-  "adapter_name": "Antigravity",
-  "mappings": [
-    {
-      "source_paths": [
-        "constitution/identity.md",
-        "constitution/approval_policy.md",
-        "standards/git_standards.md"
-      ],
-      "output_path": ".agents/AGENTS.md",
-      "format": "markdown_concat",
-      "prefix": "# Workspace Agent Instructions\n"
-    }
-  ]
+  "adapter": "Cursor-Rules",
+  "build_pipeline": {
+    "sources": [
+      "constitution/identity.md",
+      "constitution/approval_policy.md",
+      "standards/coding_style.md"
+    ],
+    "target": ".cursorrules",
+    "formatter": "json_wrap_system_prompt"
+  }
 }
 ```
-This ensures the core specifications remain pristine, while each tool consumes it in the format it parses best.
+通过适配器在构建/发布时自动生成文件，确保开发者在使用不同的开发工具时，智能体读取的底层规则是完全一致、同步更新的。
 
 ---
 
-## 3. Structured Memory System (State Interchange)
+## 三、 双向交互式 Artifact 评审设计 (Interactive Review)
 
-Instead of forcing the agent to read all files on startup, AEOS provides a structured state log that is updated after every turn.
+这是针对在 VS Code 内实现“右侧窗口实时评论批改”而设计的通信流：
 
 ```text
-┌────────────┐     Read Memory     ┌──────────────────┐
-│  AI Agent  ├────────────────────►│ memory/          │
-│            │                     │  PROJECT_CONTEXT │
-└─────┬──────┘                     │  TECHNICAL_DEBT  │
-      │                            │  ROADMAP         │
-      │ Execute Task               └────────┬─────────┘
-      ▼                                     ▲
-┌────────────┐                              │
-│ Workspace  ├──────────────────────────────┘
-│ Code Change│       Update Memory (Definition of Done)
-└────────────┘
+ [开发者在右侧 Artifact 修改文档]
+                │
+                ▼ (触发保存)
+ ┌────────────────────────────────────────────────────┐
+ │  Antigravity Brain Artifacts 目录 (镜像文档)        │
+ └──────────────────────┬─────────────────────────────┘
+                        │
+                        ▼ (Agent 触发 Cwd 差分对比)
+ ┌────────────────────────────────────────────────────┐
+ │  AEOS 同步中间件 (Sync Pipeline)                   │
+ └──────────────────────┬─────────────────────────────┘
+                        │
+                        ▼ (自动执行 Git Add 与 Commit)
+ [本地代码仓库 d:/vibecoding/aeos/roadmap/ 真实文件更新]
 ```
 
-- **Static Memory**: Loaded once on startup (`PROJECT_CONTEXT.md`, `ARCHITECTURE.md`).
-- **Dynamic Memory**: Loaded and updated after every development loop (`TECHNICAL_DEBT.md`, `LESSONS_LEARNED.md`). Before committing code, the agent **MUST** update these logs to preserve continuity for the next session.
+### 3.1 联合评审步骤：
+1. **自动镜像推送**：当 AEOS 在 `d:/vibecoding/aeos/roadmap/` 创建或更新核心设计文档（PRD, Architecture）时，系统会自动在 Antigravity brain 下创建对应镜像文件，并带上 `UserFacing: true, RequestFeedback: true` 的元数据。
+2. **实时侧边批改**：这会在您的编辑器右边分栏中打开该文档。您可以直接在上面像普通 Markdown 一样划线批注、修改段落。
+3. **数据反向回流**：当您编辑完毕，我（智能体）会通过读取 brain 路径下的文件，智能比对出您的最新批改，并将修改增量更新回真实的 Git 目录 `roadmap/` 中，从而实现闭环评审。
 
 ---
 
-## 4. Approval Level Guardrails (L0-L7 Security Middleware)
+## 四、 统一上下文内存交换协议 (Memory System)
 
-The client adapter acts as a security middleware, intercepting agent tool calls and matching them against the `approval_policy.md` specification:
+为了最大化减少大项目开发中 Agent 重复全盘读取目录导致的 Token 浪费与性能延迟，AEOS 约定了以下内存模型：
 
-```text
-[Agent Tool Call]
-       │
-       ▼
-┌────────────────────────────────────────────────────────┐
-│  Adapter Middleware (Checks tool against L0-L7 rules)  │
-└──────────────────────────┬─────────────────────────────┘
-                           │
-             ┌─────────────┴─────────────┐
-             ▼                           ▼
-      [Level <= L3]               [Level >= L4]
-             │                           │
-             ▼                           ▼
-      🟢 Execute Auto             🔴 Prompt User for Consent
-```
-
-1. **L0-L3 (Safe Queries/Refactors)**: Executed silently in the sandbox without disrupting the developer.
-2. **L4 (Major Code Write)**: Allowed to execute, but the adapter immediately sends a summary notification of the changed files to the chat UI.
-3. **L5-L7 (Commands/Env Modifies/Deploys)**: The adapter intercepts execution and triggers the client UI's permission modal, blocking further progress until consent is granted.
+1. **静态层 (Static Layer)**：`PROJECT_CONTEXT.md` 与 `ARCHITECTURE.md`，定义大局模型，只在项目初始化或重大 RFC 变更时更新。
+2. **动态层 (Dynamic Layer)**：`TECHNICAL_DEBT.md` 与 `LESSONS_LEARNED.md`。每次开发 Turn 结束（Definition of Done）前，Agent **必须**提取本次改动的重构债及踩坑点写入此处。
+3. **读取优先级**：Agent 启动任何开发任务时，**必须优先读取** `memory/`，依据其中的上下文信息辅助决策，禁止盲目扫描源码文件。

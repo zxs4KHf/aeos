@@ -1,48 +1,45 @@
 # 🤖 AI Engineering OS (AEOS)
 
-AI Engineering OS (AEOS) is a platform-agnostic, agent-agnostic, and prompt-independent software engineering operating system for AI Agents.
+AI Engineering OS (AEOS) 是一套平台无关（Platform-Agnostic）、智能体无关（Agent-Agnostic）且 Prompt 无关（Prompt-Independent）的 **AI 软件工程操作系统规范**。
 
 ---
 
-## 🎯 Project Mission
+## 🎯 项目愿景与使命
 
-To establish a standardized, unified, and long-term maintainable software engineering specification system. Any AI Agent, once integrated with AEOS via a custom adapter, automatically gains full software engineering capabilities, adhering to standard development, review, testing, and lifecycle management workflows.
+建立一套标准化、可维护、可长期演进的 AI 软件工程规范。任何 AI Agent 接入后，都将遵循统一的开发、设计、测试、评审和风险控制流程。AEOS 将作为未来所有 Vibe Coding 项目的基础设施，让智能体遵循一致的工程标准，而非各自维护零散的规则。
 
 ---
 
-## 📂 Repository Structure
+## 📂 项目目录规范
 
 ```text
 AEOS/
-├── constitution/       # The highest principles and risk policies of AEOS
-├── standards/          # Code, Git, documentation, and performance standards
-├── playbooks/          # Best practice workflows for specific environments (Web App, Bot, CLI, etc.)
-├── templates/          # Standardized templates for PRD, Architecture, ADR, RFC, Postmortem, etc.
-├── workflows/          # Process workflows for task breakdown, coding, review, and QA
-├── adapters/           # Platforms-specific integration rules (Antigravity, Claude Code, Cursor, etc.)
-├── memory/             # Structures for project contexts, decisions, debt, and lessons learned
-├── docs/               # System documentation and manuals
-└── roadmap/            # Visions, Research, PRDs, and release logs
+├── constitution/       # 核心宪章（定义 Agent 身份、L0-L7 授权与审批层级）
+├── standards/          # 工程标准（代码、Git、测试、文档、性能规范）
+├── playbooks/          # 开发手册（针对不同技术栈如 Web App, Bot, CLI 的最佳实践）
+├── templates/          # 统一模板（PRD, Architecture, ADR, RFC, Postmortem 等）
+├── workflows/          # 过程工作流（任务拆分、代码编写、QA 测试、评审发布流）
+├── adapters/           # 平台适配器（将 AEOS 规范自动编译翻译为特定平台指令）
+├── memory/             # 上下文记忆系统（存储静态项目上下文与动态技术债、经验教训日志）
+├── docs/               # 系统文档与开发者手册
+└── roadmap/            # 版本路线图（规划、调研报告、PRD 与发布日志）
 ```
 
 ---
 
-## 🚀 Version & Milestones
+## 🚀 核心设计目标 (本阶段实施)
 
-- **v0.1 Foundation (Current)**: Project initiation, research, PRD definition, architecture, and module breakdown.
-- **v0.2 Constitution**: Finalizing the highest principles, risk control levels (L0-L7), and agent identity.
-- **v0.3 Standards**: Establishing core coding, document, testing, and Git conventions.
-- **v0.4 Playbooks**: Building environment-specific manuals.
-- **v0.5 Adapters**: Integrating custom adapters for Antigravity, Claude Code, and Cursor.
-- **v0.6 Memory System**: Setting up structured project context and lessons learned schemas.
-- **v1.0 Stable Release**: Complete integration and production-grade stability.
+基于用户的反馈，我们确立了以下两项重要的设计标准并将其落入核心架构：
+1. **中文为首要交付标准 (Chinese Priority)**：AEOS 所有的规范、标准、决策记录均以**简体中文**作为第一官方语言，确保本地开发时沟通顺畅、批改直观。
+2. **实时交互评审管道 (Interactive Artifact Review)**：
+   - 所有的设计规范与蓝图文档（Roadmap, PRD, Architecture）在生成时，将自动镜像到 Antigravity 会话的 Artifacts 目录。
+   - 开发者可直接在 **“右侧窗口 (Artifacts 拆分面板)”** 对文档进行实时评论与修改。
+   - 智能体支持读取用户在右侧面板的修改内容，并自动将批改同步写回项目 Git 代码树，完成实时的“双向同步与联合评审”。
 
 ---
 
-## 📄 Documentation Index
+## 📄 核心文档索引 (可点击右侧面板实时批改)
 
-All initialization and design documents can be found under the `roadmap/` directory:
-- [AEOS Project Vision & Scope (Vision)](roadmap/PRD_v0.1.md#Vision)
-- [AEOS Comparative Research (Research)](roadmap/research_v0.1.md)
-- [AEOS Product Requirements Document (PRD)](roadmap/PRD_v0.1.md)
-- [AEOS System Architecture & Specifications (Architecture)](roadmap/architecture_v0.1.md)
+- 📜 [AEOS 项目立项与 PRD 定义 (PRD_v0.1.md)](roadmap/PRD_v0.1.md)
+- 🔬 [AEOS 技术与智能体调研报告 (research_v0.1.md)](roadmap/research_v0.1.md)
+- 📐 [AEOS 系统架构与模块设计 (architecture_v0.1.md)](roadmap/architecture_v0.1.md)
