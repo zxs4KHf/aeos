@@ -1,93 +1,66 @@
 {
+  "$schema": "../schemas/config.schema.json",
+  "schemaVersion": 2,
+  "policySource": "policies/core.json",
+  "knowledge": [
+    "constitution",
+    "standards",
+    "workflows",
+    "playbooks",
+    "templates"
+  ],
+  "maxEntryLines": 120,
   "pipelines": [
     {
-      "platform": "antigravity",
-      "target": "dist/AGENTS.md",
-      "sources": [
-        "constitution/constitution.md",
-        "standards/coding_standard.md",
-        "standards/documentation_standard.md",
-        "standards/git_standard.md",
-        "standards/testing_standard.md",
-        "standards/architecture_standard.md",
-        "standards/security_standard.md",
-        "standards/performance_standard.md",
-        "standards/logging_standard.md",
-        "standards/dependency_standard.md",
-        "standards/versioning_standard.md",
-        "workflows/development_workflow.md",
-        "workflows/incident_response_workflow.md",
-        "workflows/review_sync_workflow.md"
-      ]
+      "platform": "codex",
+      "aliases": ["agents"],
+      "renderer": "agents",
+      "target": "dist/codex/AGENTS.md",
+      "installTarget": "AGENTS.md",
+      "mirrors": ["AGENTS.md"]
     },
     {
       "platform": "cursor",
-      "target": "dist/.cursorrules",
-      "sources": [
-        "constitution/constitution.md",
-        "standards/coding_standard.md",
-        "standards/documentation_standard.md",
-        "standards/git_standard.md",
-        "standards/testing_standard.md",
-        "standards/architecture_standard.md",
-        "standards/security_standard.md",
-        "standards/performance_standard.md",
-        "standards/logging_standard.md",
-        "standards/dependency_standard.md",
-        "standards/versioning_standard.md"
-      ]
+      "renderer": "cursor",
+      "target": "dist/cursor/.cursor/rules/aeos-core.mdc",
+      "installTarget": ".cursor/rules/aeos-core.mdc"
     },
     {
-      "platform": "claudecode",
-      "target": "dist/.clauderules",
-      "sources": [
-        "constitution/constitution.md",
-        "standards/coding_standard.md",
-        "standards/git_standard.md",
-        "standards/testing_standard.md",
-        "standards/security_standard.md"
-      ]
+      "platform": "claude",
+      "aliases": ["claudecode"],
+      "renderer": "markdown",
+      "target": "dist/claude/CLAUDE.md",
+      "installTarget": "CLAUDE.md"
     },
     {
       "platform": "cline",
-      "target": "dist/.clinerules",
-      "sources": [
-        "constitution/constitution.md",
-        "standards/coding_standard.md",
-        "standards/documentation_standard.md",
-        "standards/git_standard.md",
-        "standards/testing_standard.md",
-        "standards/security_standard.md"
-      ]
+      "renderer": "markdown",
+      "target": "dist/cline/.clinerules/00-aeos-core.md",
+      "installTarget": ".clinerules/00-aeos-core.md"
+    },
+    {
+      "platform": "copilot",
+      "renderer": "markdown",
+      "target": "dist/copilot/.github/copilot-instructions.md",
+      "installTarget": ".github/copilot-instructions.md"
+    },
+    {
+      "platform": "gemini",
+      "renderer": "markdown",
+      "target": "dist/gemini/GEMINI.md",
+      "installTarget": "GEMINI.md"
+    },
+    {
+      "platform": "antigravity",
+      "renderer": "agents",
+      "target": "dist/antigravity/.agents/AGENTS.md",
+      "installTarget": ".agents/AGENTS.md"
     },
     {
       "platform": "chatgpt",
-      "target": "dist/chatgpt_system.md",
-      "sources": [
-        "constitution/constitution.md",
-        "standards/coding_standard.md",
-        "standards/documentation_standard.md",
-        "standards/git_standard.md",
-        "standards/testing_standard.md",
-        "standards/architecture_standard.md",
-        "standards/security_standard.md",
-        "standards/performance_standard.md",
-        "standards/logging_standard.md",
-        "standards/dependency_standard.md",
-        "standards/versioning_standard.md"
-      ]
-    },
-    {
-      "platform": "codex",
-      "target": "dist/codex_system.md",
-      "sources": [
-        "constitution/constitution.md",
-        "standards/coding_standard.md",
-        "standards/git_standard.md",
-        "standards/testing_standard.md",
-        "standards/security_standard.md",
-        "standards/performance_standard.md"
-      ]
+      "renderer": "system",
+      "target": "dist/chatgpt/system.md",
+      "installTarget": ".aeos/system/chatgpt.md"
     }
   ]
 }

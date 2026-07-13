@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "policyHash": "a1d44042d74b9cc694c6a49affb1774db09065eb944c266b8f0ac128ac753257",
+  "files": [
+    {
+      "platform": "codex",
+      "path": "dist/codex/AGENTS.md",
+      "sha256": "c5778441189d5f57c294a9fdd25bf7dfc9337ab075cfd94f3ee17323d09dc117",
+      "lines": 41
+    },
+    {
+      "platform": "cursor",
+      "path": "dist/cursor/.cursor/rules/aeos-core.mdc",
+      "sha256": "868aeede9bb3f9ad749a0430bccfbe8bd68cdae1603b9f28ce17608ec971939f",
+      "lines": 46
+    },
+    {
+      "platform": "claude",
+      "path": "dist/claude/CLAUDE.md",
+      "sha256": "c5778441189d5f57c294a9fdd25bf7dfc9337ab075cfd94f3ee17323d09dc117",
+      "lines": 41
+    },
+    {
+      "platform": "cline",
+      "path": "dist/cline/.clinerules/00-aeos-core.md",
+      "sha256": "c5778441189d5f57c294a9fdd25bf7dfc9337ab075cfd94f3ee17323d09dc117",
+      "lines": 41
+    },
+    {
+      "platform": "copilot",
+      "path": "dist/copilot/.github/copilot-instructions.md",
+      "sha256": "c5778441189d5f57c294a9fdd25bf7dfc9337ab075cfd94f3ee17323d09dc117",
+      "lines": 41
+    },
+    {
+      "platform": "gemini",
+      "path": "dist/gemini/GEMINI.md",
+      "sha256": "c5778441189d5f57c294a9fdd25bf7dfc9337ab075cfd94f3ee17323d09dc117",
+      "lines": 41
+    },
+    {
+      "platform": "antigravity",
+      "path": "dist/antigravity/.agents/AGENTS.md",
+      "sha256": "c5778441189d5f57c294a9fdd25bf7dfc9337ab075cfd94f3ee17323d09dc117",
+      "lines": 41
+    },
+    {
+      "platform": "chatgpt",
+      "path": "dist/chatgpt/system.md",
+      "sha256": "c5778441189d5f57c294a9fdd25bf7dfc9337ab075cfd94f3ee17323d09dc117",
+      "lines": 41
+    }
+  ]
+}

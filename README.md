@@ -1,140 +1,148 @@
-# 🤖 AI Engineering OS (AEOS)
+# AI Engineering OS (AEOS)
 
-AI Engineering OS (AEOS) 是一套平台无关（Platform-Agnostic）、智能体无关（Agent-Agnostic）且 Prompt 无关（Prompt-Independent）的 **AI 软件工程操作系统规范**。
+AEOS 是一个跨 AI 编程代理的工程策略编译器与工作流工具包。它把平台无关的工程规则维护为结构化策略，再生成 Codex、Cursor、Claude Code、Cline、GitHub Copilot、Gemini、Antigravity 和 API Agent 可读取的原生入口文件。
 
----
+当前版本：`2.0.0-alpha.1`
 
-## 🎯 项目愿景与使命
+> AEOS 是治理与上下文层，不是 Agent Runtime。它不会绕过或替代宿主平台的沙箱、权限和审批机制。
 
-建立一套标准化、可维护、可长期演进的 AI 软件工程规范。任何 AI Agent 接入后，都将遵循统一的开发、设计、测试、评审和风险控制流程。AEOS 将作为未来所有 Vibe Coding 项目的基础设施，让智能体遵循一致的工程标准，而非各自维护零散的规则。
+## 核心设计
 
----
+```text
+policies/core.json
+        |
+        v
+Schema and semantic validation
+        |
+        v
+Platform renderers ---------> concise native entry files
+        |                              |
+        |                              v
+        +--------------------> .aeos/knowledge/
+                                       |
+                                       v
+                              load details on demand
+```
 
-## 📂 项目目录规范
+AEOS 2.0 将上下文拆成两层：
+
+- **短入口**：始终加载，只包含优先级、核心规则和知识地图。目前每个平台入口为 41-46 行。
+- **知识包**：部署到目标项目的 `.aeos/knowledge/`，Agent 仅在任务相关时读取标准、工作流、Playbook 和模板。
+
+## 目录
 
 ```text
 AEOS/
-├── constitution/       # 核心宪章（定义 Agent 身份、L0-L7 授权与审批层级）
-├── standards/          # 工程标准（代码、Git、测试、文档、性能规范）
-├── playbooks/          # 开发手册（针对不同技术栈如 Web App, Bot, CLI 的最佳实践）
-├── templates/          # 统一模板（PRD, Architecture, ADR, RFC, Postmortem 等）
-├── workflows/          # 过程工作流（任务拆分、代码编写、QA 测试、评审发布流）
-├── adapters/           # 平台适配器（将 AEOS 规范自动编译翻译为特定平台指令）
-├── memory/             # 上下文记忆系统（存储静态项目上下文与动态技术债、经验教训日志）
-├── docs/               # 系统文档与开发者手册
-└── roadmap/            # 版本路线图（规划、调研报告、PRD 与发布日志）
+├── policies/            # 机器可校验的核心策略源
+├── adapters/            # 编译器、安装器与平台能力配置
+├── constitution/        # 人类可读的治理原则
+├── standards/           # 详细工程标准
+├── workflows/           # 可选研发工作流
+├── playbooks/           # 技术栈专项指南
+├── templates/           # PRD、ADR、RFC、复盘和项目记忆模板
+├── memory/              # AEOS 自身的已验证项目事实
+├── roadmap/             # 历史设计与 2.0 演进文档
+├── test/                # 编译与安全安装测试
+└── dist/                # 确定性生成的平台产物
 ```
 
----
+## 快速开始
 
-## 🚀 核心设计目标 (本阶段实施)
+要求 Node.js 20 或更高版本。
 
-基于用户的反馈，我们确立了以下两项重要的设计标准并将其落入核心架构：
-1. **中文为首要交付标准 (Chinese Priority)**：AEOS 所有的规范、标准、决策记录均以**简体中文**作为第一官方语言，确保本地开发时沟通顺畅、批改直观。
-2. **实时交互评审管道 (Interactive Artifact Review)**：
-   - 所有的设计规范与蓝图文档（Roadmap, PRD, Architecture）在生成时，将自动镜像到 Antigravity 会话的 Artifacts 目录。
-   - 开发者可直接在 **“右侧窗口 (Artifacts 拆分面板)”** 对文档进行实时评论与修改。
-   - 智能体支持读取用户在右侧面板的修改内容，并自动将批改同步写回项目 Git 代码树，完成实时的“双向同步与联合评审”。
-
----
-
-## 🚀 快速上手与使用教程
-
-AEOS 的核心逻辑是：**“核心规范独立维护，平台规则一键编译，目标项目拷贝部署”**。
-
-### 第一步：修改核心规范
-请勿直接编辑 `dist/` 目录下的规则文件，因为它们在下一次编译时会被覆盖。
-如果需要新增或修改开发标准（如代码风格、Git提交规范等），请直接在对应的源文件中修改：
-- 宪章规范：[constitution/constitution.md](file:///d:/vibecoding/aeos/constitution/constitution.md)
-- 各种标准：[standards/](file:///d:/vibecoding/aeos/standards) 目录下的对应 Markdown 文件
-- 工作流规范：[workflows/](file:///d:/vibecoding/aeos/workflows) 目录下的对应 Markdown 文件
-
-### 第二步：编译平台规则
-在 AEOS 项目根目录下，运行适配器编译器以生成对应平台专属的规则文件：
 ```bash
-# 编译所有平台的规则文件
+npm ci
+npm run build
+npm test
+```
+
+检查已提交的生成物是否与策略源一致：
+
+```bash
+npm run check
+```
+
+## 生成平台规则
+
+```bash
 node adapters/compiler.js --platform all
-
-# 仅编译指定平台的规则（如 cursor, cline, claudecode, antigravity, chatgpt, codex）
 node adapters/compiler.js --platform cursor
+node adapters/compiler.js --platform claude
 ```
-编译成功后，将在 [dist/](file:///d:/vibecoding/aeos/dist) 目录下生成对应的规则文件：
-- **Antigravity** -> `dist/AGENTS.md`
-- **Cursor** -> `dist/.cursorrules`
-- **Cline** -> `dist/.clinerules`
-- **Claude Code** -> `dist/.clauderules`
-- **ChatGPT API** -> `dist/chatgpt_system.md`
-- **Codex API** -> `dist/codex_system.md`
 
-### 第三步：部署应用到您的开发项目
+当前原生输出：
 
-AEOS 规范部署极为简单，支持**智能 Agent 自动部署**与**命令行/手动拷贝部署**。绝大多数 AI 智能体均有能力直接通过读取本地规则文件或分析您的 GitHub 仓库来掌握这套规范。
+| 平台 | 生成格式 |
+| --- | --- |
+| Codex / AGENTS.md 兼容 Agent | `AGENTS.md` |
+| Cursor | `.cursor/rules/aeos-core.mdc` |
+| Claude Code | `CLAUDE.md` |
+| Cline | `.clinerules/00-aeos-core.md` |
+| GitHub Copilot | `.github/copilot-instructions.md` |
+| Gemini | `GEMINI.md` |
+| Antigravity | `.agents/AGENTS.md` |
+| ChatGPT / API Agent | `.aeos/system/chatgpt.md` |
 
-#### 选项 A：智能 Agent 自然语言一键接入 (推荐 🌟)
-主流的 AI 智能体/开发助手（如 Cursor, Claude, Cline, Codex, Antigravity 等）拥有读取项目文件和执行本地脚本的能力。您只需在对话中用自然语言对 Agent 提要求，它们就会自动帮您接入。例如：
+平台和目标路径统一声明在 `adapters/config.json`。编译器会验证配置、策略 ID、源文档引用、renderer 和入口行数预算，并通过 `dist/manifest.json` 记录输出哈希。
 
-> 💬 **用户**：请帮我将项目 `D:/my-new-project` 接入 AEOS 规范，规则适配 cursor。
-> 
-> 🤖 **Agent**：在读取本规范的《工程宪章》后，会自动在后台定位并执行 AEOS 一键接入工具：
-> `node <AEOS_Path>/adapters/integrator.js --path "D:/my-new-project" --platform cursor`
-> 自动在新项目根目录下分发 `.cursorrules` 文件并初始化 `memory/` 模板目录。
+## 接入目标项目
 
-你也可以在 AEOS 项目根目录下手动运行命令执行一键接入：
+先预览，不写入文件：
+
 ```bash
-node adapters/integrator.js --path "<target_project_path>" --platform <platform_name>
-# 例如：
-node adapters/integrator.js --path "D:/projects/my-new-app" --platform cursor
+node adapters/integrator.js --path "D:/projects/example" --platform cursor --dry-run
 ```
 
-#### 选项 B：手动拷贝部署
-您也可以手动将编译生成的规则文件复制到目标项目的对应位置：
-1. **对于 Cursor 辅助的项目**：
-   将 `dist/.cursorrules` 复制到目标项目的根目录下。
-2. **对于 Antigravity 辅助的项目**：
-   将 `dist/AGENTS.md` 复制到目标项目工作区的 `.agents/AGENTS.md`，或者放置于全局配置目录 `C:\Users\14841\.gemini\config\AGENTS.md`。
-3. **对于 Cline / Claude Code 辅助的项目**：
-   分别将 `dist/.clinerules` / `dist/.clauderules` 复制到目标项目的根目录下。
-4. **对于 Codex 辅助的项目**：
-   将 `dist/codex_system.md` 复制到目标项目的根目录下，并命名为 `AGENTS.md`。
-5. **对于其他直接使用 ChatGPT / Claude API 等自定义智能体/脚本**：
-   在代码中直接读取 `dist/chatgpt_system.md`，并将其作为 System Message 传入（参见下方示例）。
+确认后安装：
 
-部署完成后，对应的 AI 智能体在接管该项目进行开发时，便会自动加载并强制执行这套 AEOS 软件工程规范。
-
-### 💡 ChatGPT / Codex API 调用集成示例
-
-如果您是自主开发 AI 智能体工具或调用 ChatGPT/Codex API，可以通过以下 Node.js 代码将 AEOS 编译后的规则作为 System Prompt 注入：
-
-```javascript
-const fs = require('fs');
-const path = require('path');
-const { OpenAI } = require('openai');
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-async function runAgent(userPrompt) {
-  // 读取编译好的 AEOS ChatGPT 系统规则提示词
-  const systemPromptPath = path.join(__dirname, 'dist/chatgpt_system.md');
-  const systemRules = fs.readFileSync(systemPromptPath, 'utf8');
-
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4o', // 推荐使用支持 System Prompt 的模型
-    messages: [
-      { role: 'system', content: systemRules },
-      { role: 'user', content: userPrompt }
-    ],
-    temperature: 0.2 // 推荐使用低 Temperature 以使模型严格遵守 AEOS 规范
-  });
-
-  console.log(completion.choices[0].message.content);
-}
+```bash
+node adapters/integrator.js --path "D:/projects/example" --platform cursor
 ```
 
----
+需要多个客户端时，建议按实际使用的平台分别执行安装。安装清单会增量保留已有平台。`--platform all` 主要用于兼容性测试；部分客户端会同时读取 `AGENTS.md` 和自己的原生文件，全部安装可能产生重复上下文。
 
-## 📄 核心文档索引 (可点击右侧面板实时批改)
+安装器会：
 
-- 📜 [AEOS 项目立项与 PRD 定义 (PRD_v0.1.md)](roadmap/PRD_v0.1.md)
-- 🔬 [AEOS 技术与智能体调研报告 (research_v0.1.md)](roadmap/research_v0.1.md)
-- 📐 [AEOS 系统架构与模块设计 (architecture_v0.1.md)](roadmap/architecture_v0.1.md)
+- 生成平台原生入口文件。
+- 复制详细知识到 `.aeos/knowledge/`。
+- 初始化 `.aeos/PROJECT_CONTEXT.md` 等项目事实模板。
+- 写入 `.aeos/install-manifest.json`，用于识别后续可安全升级的文件。
 
+默认情况下，安装器拒绝覆盖不属于 AEOS 或被用户修改过的文件。确需替换时使用 `--force`，原文件会先保存到 `.aeos/backups/<timestamp>/`。
+
+```bash
+node adapters/integrator.js --path "D:/projects/example" --platform claude --force
+```
+
+只安装平台入口、不复制知识包：
+
+```bash
+node adapters/integrator.js --path "D:/projects/example" --platform codex --no-knowledge
+```
+
+## 修改规则
+
+核心、始终加载的规则维护在 `policies/core.json`。每条策略必须包含：
+
+- 稳定且唯一的 `id`
+- `required` 或 `recommended` 级别
+- 适用 `scope`
+- 可执行的 `statement`
+- 设计理由 `rationale`
+- 完成证据 `evidence`
+- 人类可读的 `source`
+
+详细说明放在 `standards/` 或 `workflows/`，不要把所有内容重新塞回核心策略。修改后运行：
+
+```bash
+npm run build
+npm run verify
+```
+
+## 当前边界
+
+- L0-L7 风险模型目前是设计语言，不直接执行宿主权限控制。
+- 工作流目前是按需知识文档，尚未全部转换为各平台 Skills 或 Commands。
+- 2.0 仍处于 alpha；历史 v0.1 文档只用于追溯，不代表当前已实现能力。
+
+当前架构与下一阶段计划见 [roadmap/architecture_v2.md](roadmap/architecture_v2.md)。

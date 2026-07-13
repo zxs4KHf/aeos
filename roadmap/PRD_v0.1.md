@@ -1,5 +1,7 @@
 # 📋 AI Engineering OS (AEOS) v0.1 产品需求文档 (PRD)
 
+> 历史归档：本文记录早期产品设想，其中 Artifact 双向同步、指标采集和权限执行并未在 v1.0 中实现。当前边界以根目录 `README.md` 和 `roadmap/architecture_v2.md` 为准。
+
 本需求文档定义了 **AI Engineering OS (AEOS) v0.1 Foundation** 版本的核心产品范围、功能规格、安全审批策略及路线图规划。
 
 ---

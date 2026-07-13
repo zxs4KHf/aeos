@@ -1,0 +1,16 @@
+{
+  "name": "aeos",
+  "version": "2.0.0-alpha.1",
+  "private": true,
+  "description": "Agent-agnostic engineering policy compiler and workflow toolkit",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node adapters/compiler.js --platform all",
+    "check": "node adapters/compiler.js --platform all --check",
+    "test": "node --test",
+    "verify": "npm run test && npm run check"
+  }
+}

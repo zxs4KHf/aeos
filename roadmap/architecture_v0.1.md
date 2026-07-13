@@ -1,5 +1,7 @@
 # 📐 AI Engineering OS (AEOS) v0.1 系统架构设计说明书
 
+> 历史归档：本文包含早期意向设计，不代表当前已实现架构。AEOS 2.0 当前架构见 `roadmap/architecture_v2.md`。
+
 本说明书详细阐述了 **AI Engineering OS (AEOS)** 的系统解耦模型、目录规范、适配器翻译架构（Adapter Layer）以及用于交互式评审与内存交换的数据流设计。
 
 ---

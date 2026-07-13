@@ -2,6 +2,28 @@
 
 所有 AI Engineering OS (AEOS) 的版本发布与核心演进在此持久化记录。
 
+## [2.0.0-alpha.1] - 2026-07-13
+
+### Added
+
+- 结构化核心策略与稳定 Policy ID。
+- 面向 Codex、Cursor、Claude、Cline、Copilot、Gemini、Antigravity 和 API Agent 的原生短入口。
+- 入口上下文预算、确定性 manifest 和生成漂移检查。
+- 带 dry-run、受管文件哈希、冲突拒绝和强制备份的安全安装器。
+- Node.js 原生测试、CI 与目标项目事实模板。
+
+### Changed
+
+- 将 AEOS 定位收敛为策略编译器内核与可选工作流工具包。
+- 将详细知识改为 `.aeos/knowledge/` 按需加载，不再编译为巨型 Prompt。
+- 重写 AEOS 自身 memory，使其只包含已验证项目事实。
+
+### Removed
+
+- 已弃用的 `.cursorrules`、`.clauderules`、单文件 `.clinerules` 和旧巨型系统提示词产物。
+
+---
+
 ## [v1.0.0] - 2026-06-20
 
 ### 🚀 新增 (Added)

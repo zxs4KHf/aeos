@@ -1,34 +1,32 @@
-# 📝 AEOS 文档与注释规范 (Documentation Standard)
+# AEOS 文档标准 v2.0
 
-本规范规定了代码注释、公共 API 说明、README 构建以及系统架构的记录标准。
+Status: active
 
----
+## 一、文档对象
 
-## 一、 代码注释与 JSDoc
+- 公共 API、复杂约束和非显然副作用应使用语言生态的标准文档格式。
+- 行内注释解释原因、约束和历史陷阱，不复述代码语法。
+- 私有且自解释的简单函数不要求形式化文档块。
 
-1. **接口文档化**：
-   - 所有的公共类、核心函数、外部 API 接口**必须**使用 JSDoc（或对应语言的文档标准格式）在头部标明其职责、入参类型、返回值及抛出的异常。
-   - 示例：
-     ```javascript
-     /**
-      * 将本地的 reminders 配置文件与飞书多维表格（Bitable）进行双向同步。
-      * @param {Client} client - 已初始化的飞书 SDK 客户端实例。
-      * @returns {Promise<boolean>} 同步成功返回 true，否则抛出异常。
-      */
-     async function syncFromBitable(client) { ... }
-     ```
-2. **行内注释原则**：
-   - 行内注释（`//`）应当用来解释**“为什么要这样写 (Why)”**，而不是“这段代码在做什么 (What)”。
-   - 解释复杂的算法逻辑、规避的历史 Bug 陷阱、或是特定外部 API 的古怪行为。
-3. **保留注释**：
-   - 除非代码行被重构删除，否则原有的核心注释、架构背景设计注释不得随意剔除。
+示例：
 
----
+```javascript
+/**
+ * Atomically replaces a generated file so readers never observe partial output.
+ * @param {string} filePath absolute destination path
+ * @param {string} content complete UTF-8 content
+ */
+function atomicWrite(filePath, content) {}
+```
 
-## 二、 项目 README 与文件布局说明
+## 二、项目文档
 
-1. **项目自解释性**：
-   - 每个子项目/微服务根目录下必须包含一个详尽的 `README.md`。
-   - README 需包含：项目定位、技术选型（Tech Stack）、快速启动指南、目录说明、测试运行命令以及发布上线 SOP。
-2. **架构描述更新**：
-   - 当系统接口和模块拓扑发生变化时，必须在 24 小时内更新相应的架构说明书。
+仓库入口文档应提供项目定位、支持环境、关键命令、目录地图和当前边界。详细内容应链接到单一 source of truth，避免多个 README 重复同一事实。
+
+## 三、更新条件
+
+公共行为、运行命令、部署方式、架构边界、数据合同或长期决策变化时，在同一变更中更新对应文档。纯内部重构且行为不变时，不要求文档 churn。
+
+## 四、可验证性
+
+命令、路径、版本和示例应能被测试、链接检查或定期审查。计划中的能力必须标注 planned，不得写成已经实现。

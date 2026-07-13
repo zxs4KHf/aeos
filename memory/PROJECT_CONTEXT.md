@@ -1,53 +1,34 @@
-# 🧠 项目画像上下文 (PROJECT_CONTEXT)
+# AEOS Project Context
 
-> [!NOTE]
-> **使用指南**：本文件属于**静态记忆层 (Static Memory Layer)**。它用于声明项目的基本画像、业务逻辑边界及开发调试指令。智能体启动时应**首要读取本文件**以建立对项目大局的认知，避免通过全盘扫描文件来猜测项目技术画像。
+Status: active
+Last verified: 2026-07-13
+Owner: repository maintainers
 
----
+## Purpose
 
-## 一、 项目基本画像 (Project Profile)
+AEOS is an agent-agnostic engineering policy compiler and optional workflow toolkit. It generates concise native instruction entry files and installs detailed guidance for on-demand use.
 
-- **项目名称**：`[填写项目名称]`
-- **项目愿景**：`[一句话总结项目要解决的核心业务痛点与长远愿景]`
-- **核心用户**：`[例如：终端用户、机器人对话用户、开发运维人员等]`
+## Users
 
----
+- Individual developers who switch between AI coding agents.
+- Teams that want versioned, reviewable engineering guidance.
+- Tool builders that need a portable system prompt or repository instruction layer.
 
-## 二、 核心业务域与职责划分 (Domain Boundary)
+## Technology
 
-> 描述项目核心逻辑由哪些模块/服务组成，它们之间如何交互。
-1. **模块 A**：`[描述其核心职责与核心处理逻辑]`
-2. **模块 B**：`[描述其核心职责与核心处理逻辑]`
-3. **第三方依赖接口**：`[如：对接飞书开放平台 API，拉取多维表格数据]`
+- Runtime: Node.js 20 or later.
+- Dependencies: Node.js standard library only.
+- Tests: built-in `node:test` runner.
+- State: JSON and Markdown files; no database or resident process.
 
----
+## Commands
 
-## 三、 技术栈声明 (Technology Stack)
+- Install: `npm ci`
+- Build: `npm run build`
+- Test: `npm test`
+- Verify: `npm run verify`
+- Preview integration: `node adapters/integrator.js --path <project> --platform <platform> --dry-run`
 
-- **开发语言**：`[例如：Node.js v18+ / Python v3.10+]`
-- **主要依赖库**：
-  - `[核心类库 1，如: express / sqlite3 / lark-sdk]`
-  - `[核心类库 2]`
-- **持久化方案**：`[例如：SQLite 本地单文件事务，启用 WAL 模式]`
+## Product Boundary
 
----
-
-## 四、 开发者快速启动与验证命令 (Quickstart)
-
-### 4.1 环境准备
-- 配置文件：拷贝 `.env.example` 并填入密钥参数至 `.env`。
-- 依赖安装：`npm install` 或 `pip install -r requirements.txt`。
-
-### 4.2 本地运行与调试
-- 开发模式：`npm run dev` 或 `python app.py`。
-- 守护运行：`node v2-core/entry.js`。
-
-### 4.3 自动化测试验证
-- 单元测试：`npm run test`。
-- 静态 Lint 检查：`npm run lint`。
-
----
-
-## 五、 状态说明与约束 (Constraints)
-- 本项目已接入 **AI Engineering OS (AEOS)** 工程规范体系。
-- 任何主逻辑的改动或依赖的变更必须严格参照 **L0-L7 安全层级** 执行，测试用例覆盖率目标必须维持在 `> 80%`。
+AEOS does not implement a model runtime, permission sandbox, background poller, database, or editor Artifact synchronization service.

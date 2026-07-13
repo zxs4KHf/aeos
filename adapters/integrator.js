@@ -1,173 +1,240 @@
-/**
- * AI Engineering OS (AEOS) Project Integrator
- * 
- * 一键自动将 AEOS 规范部署到新项目路径，生成平台规则并初始化记忆模板目录。
- * 
- * 使用方式：
- *   node adapters/integrator.js --path "<target_project_path>" --platform <platform>
- *   例如：
- *   node adapters/integrator.js --path "D:/projects/my-new-app" --platform cursor
- */
+const fs = require('node:fs');
+const path = require('node:path');
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+const { PROJECT_ROOT, buildOutputs, sha256 } = require('./compiler');
 
-const PROJECT_ROOT = path.resolve(__dirname, '..');
+const INSTALL_MANIFEST = '.aeos/install-manifest.json';
 
-// 打印日志辅助
-function logSuccess(msg) {
-  console.log(`\x1b[32m✔\x1b[0m ${msg}`);
-}
-function logInfo(msg) {
-  console.log(`\x1b[34mℹ\x1b[0m ${msg}`);
-}
-function logError(msg) {
-  console.log(`\x1b[31m✖\x1b[0m ${msg}`);
-}
-
-function parseArgs() {
-  const args = process.argv.slice(2);
-  let targetPath = '';
-  let platform = '';
-
-  for (let i = 0; i < args.length; i++) {
-    if ((args[i] === '--path' || args[i] === '-d') && args[i + 1]) {
-      targetPath = args[i + 1];
-      i++;
-    } else if ((args[i] === '--platform' || args[i] === '-p') && args[i + 1]) {
-      platform = args[i + 1].toLowerCase();
-      i++;
-    }
-  }
-
-  return { targetPath, platform };
-}
-
-function ensureDirExists(dirPath) {
-  if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true });
-  }
-}
-
-function copyRule(sourceName, targetDestPath) {
-  const sourcePath = path.join(PROJECT_ROOT, 'dist', sourceName);
-  if (!fs.existsSync(sourcePath)) {
-    throw new Error(`找不到已编译的源规则文件: ${sourceName}，请先确保编译成功。`);
-  }
-  ensureDirExists(path.dirname(targetDestPath));
-  fs.copyFileSync(sourcePath, targetDestPath);
-  logSuccess(`已成功部署规则到 -> ${path.relative(process.cwd(), targetDestPath)}`);
-}
-
-function initMemoryTemplates(targetProjectDir) {
-  const memoryDir = path.join(targetProjectDir, 'memory');
-  ensureDirExists(memoryDir);
-
-  const templates = {
-    'PROJECT_CONTEXT.md': `# 项目上下文画像 (PROJECT_CONTEXT)
-
-## 1. 项目基本定位
-- **名称**: [项目名称]
-- **主要功能**: [此项目的主要用途是什么]
-- **技术栈**: [核心语言、框架、主要依赖]
-
-## 2. 关键业务流
-- [说明项目的核心模块与主要调用链关系]
-`,
-    'TECHNICAL_DEBT.md': `# 技术债务记录 (TECHNICAL_DEBT)
-
-本文件用于记录在开发重构中遗留 of 后续待优化改进的隐患与代办事项。
-
-| 问题ID | 影响模块 | 问题描述 | 严重级别 | 修复对策 |
-| :--- | :--- | :--- | :--- | :--- |
-| **D-001** | [模块名] | [遗留的技术债描述] | 🟡 中度 | [推荐重构思路] |
-`,
-    'DECISIONS.md': `# 架构决定日志 (DECISIONS)
-
-本文件记录项目中做出的重大架构决策，用以规避未来重复试错。
-
-## [ADR-001] [决策简述]
-- **状态**: 🟢 已采纳
-- **背景**: [为什么需要做此选择]
-- **决定**: [最终的技术选型或结构设计]
-- **长远后果**: [带来哪些好处或新的限制]
-`
-  };
-
-  for (const [filename, content] of Object.entries(templates)) {
-    const filePath = path.join(memoryDir, filename);
-    if (!fs.existsSync(filePath)) {
-      fs.writeFileSync(filePath, content, 'utf8');
-      logSuccess(`已初始化记忆模板 -> memory/${filename}`);
+function parseArgs(argv) {
+  const options = { targetPath: '', platform: '', dryRun: false, force: false, knowledge: true };
+  for (let index = 0; index < argv.length; index += 1) {
+    const argument = argv[index];
+    if (['--path', '-d'].includes(argument)) {
+      if (!argv[index + 1]) throw new Error(`${argument} requires a value`);
+      options.targetPath = argv[index + 1];
+      index += 1;
+    } else if (['--platform', '-p'].includes(argument)) {
+      if (!argv[index + 1]) throw new Error(`${argument} requires a value`);
+      options.platform = argv[index + 1].toLowerCase();
+      index += 1;
+    } else if (argument === '--dry-run') {
+      options.dryRun = true;
+    } else if (argument === '--force') {
+      options.force = true;
+    } else if (argument === '--no-knowledge') {
+      options.knowledge = false;
     } else {
-      logInfo(`模板文件已存在，跳过初始化 -> memory/${filename}`);
+      throw new Error(`unknown argument: ${argument}`);
     }
   }
+  if (!options.targetPath) throw new Error('target project path is required (--path)');
+  if (!options.platform) throw new Error('platform is required (--platform)');
+  return options;
+}
+
+function normalizeRelative(relativePath) {
+  return relativePath.replace(/\\/g, '/').replace(/^\.\//, '');
+}
+
+function resolveInside(root, relativePath) {
+  const resolvedRoot = path.resolve(root);
+  const resolved = path.resolve(resolvedRoot, relativePath);
+  if (resolved !== resolvedRoot && !resolved.startsWith(`${resolvedRoot}${path.sep}`)) {
+    throw new Error(`path escapes target project: ${relativePath}`);
+  }
+  return resolved;
+}
+
+function assertNoSymlinkTraversal(root, destination) {
+  const resolvedRoot = path.resolve(root);
+  const relative = path.relative(resolvedRoot, destination);
+  let current = resolvedRoot;
+  for (const segment of relative.split(path.sep).filter(Boolean)) {
+    current = path.join(current, segment);
+    if (fs.existsSync(current) && fs.lstatSync(current).isSymbolicLink()) {
+      throw new Error(`refusing to traverse symbolic link in target project: ${path.relative(resolvedRoot, current)}`);
+    }
+  }
+}
+
+function collectFiles(root, relativeDirectory) {
+  const absoluteDirectory = path.join(root, relativeDirectory);
+  if (!fs.existsSync(absoluteDirectory)) throw new Error(`missing knowledge directory: ${relativeDirectory}`);
+  const files = [];
+  const visit = (directory) => {
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const entryPath = path.join(directory, entry.name);
+      if (entry.isDirectory()) visit(entryPath);
+      else if (entry.isFile()) files.push(entryPath);
+    }
+  };
+  visit(absoluteDirectory);
+  return files.sort();
+}
+
+function readInstallManifest(targetRoot) {
+  const manifestPath = resolveInside(targetRoot, INSTALL_MANIFEST);
+  assertNoSymlinkTraversal(targetRoot, manifestPath);
+  if (!fs.existsSync(manifestPath)) return null;
+  try {
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    if (manifest.schemaVersion !== 1 || !Array.isArray(manifest.files)) {
+      throw new Error('unsupported manifest shape');
+    }
+    return manifest;
+  } catch (error) {
+    throw new Error(`cannot read existing ${INSTALL_MANIFEST}: ${error.message}`);
+  }
+}
+
+function createOperations(build, includeKnowledge) {
+  const operations = build.outputs.map((output) => ({
+    relativePath: normalizeRelative(output.pipeline.installTarget),
+    content: output.content,
+    kind: 'entry'
+  }));
+
+  if (includeKnowledge) {
+    for (const directory of build.config.knowledge) {
+      for (const sourcePath of collectFiles(PROJECT_ROOT, directory)) {
+        const sourceRelative = normalizeRelative(path.relative(PROJECT_ROOT, sourcePath));
+        operations.push({
+          relativePath: `.aeos/knowledge/${sourceRelative}`,
+          content: fs.readFileSync(sourcePath, 'utf8'),
+          kind: 'knowledge'
+        });
+      }
+    }
+  }
+
+  const duplicate = operations.find((operation, index) => (
+    operations.findIndex((candidate) => candidate.relativePath === operation.relativePath) !== index
+  ));
+  if (duplicate) throw new Error(`duplicate install target: ${duplicate.relativePath}`);
+  return operations;
+}
+
+function classifyOperations(targetRoot, operations, previousManifest) {
+  const previousHashes = new Map((previousManifest?.files || []).map((file) => [file.path, file.sha256]));
+  return operations.map((operation) => {
+    const destination = resolveInside(targetRoot, operation.relativePath);
+    assertNoSymlinkTraversal(targetRoot, destination);
+    if (!fs.existsSync(destination)) return { ...operation, destination, action: 'create' };
+    const currentContent = fs.readFileSync(destination, 'utf8');
+    if (currentContent === operation.content) return { ...operation, destination, action: 'unchanged' };
+    const previousHash = previousHashes.get(operation.relativePath);
+    if (previousHash && sha256(currentContent) === previousHash) {
+      return { ...operation, destination, action: 'update' };
+    }
+    return { ...operation, destination, action: 'conflict' };
+  });
+}
+
+function atomicWrite(filePath, content) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  const temporaryPath = `${filePath}.tmp-${process.pid}`;
+  fs.writeFileSync(temporaryPath, content, 'utf8');
+  fs.renameSync(temporaryPath, filePath);
+}
+
+function backupConflicts(targetRoot, classified, backupId) {
+  for (const operation of classified.filter((item) => item.action === 'conflict')) {
+    const backupPath = resolveInside(targetRoot, `.aeos/backups/${backupId}/${operation.relativePath}`);
+    fs.mkdirSync(path.dirname(backupPath), { recursive: true });
+    fs.copyFileSync(operation.destination, backupPath);
+  }
+}
+
+function writeMemoryTemplates(targetRoot, dryRun) {
+  const templateRoot = path.join(PROJECT_ROOT, 'templates', 'memory');
+  const results = [];
+  for (const sourcePath of collectFiles(path.join(PROJECT_ROOT, 'templates'), 'memory')) {
+    const relativeName = normalizeRelative(path.relative(templateRoot, sourcePath));
+    const relativePath = `.aeos/${relativeName}`;
+    const destination = resolveInside(targetRoot, relativePath);
+    assertNoSymlinkTraversal(targetRoot, destination);
+    if (fs.existsSync(destination)) {
+      results.push({ relativePath, action: 'unchanged' });
+    } else {
+      results.push({ relativePath, action: 'create' });
+      if (!dryRun) atomicWrite(destination, fs.readFileSync(sourcePath, 'utf8'));
+    }
+  }
+  return results;
+}
+
+function install(options) {
+  const targetRoot = path.resolve(options.targetPath);
+  if (!fs.existsSync(targetRoot)) throw new Error(`target project does not exist: ${targetRoot}`);
+  if (fs.lstatSync(targetRoot).isSymbolicLink()) throw new Error(`target project cannot be a symbolic link: ${targetRoot}`);
+  if (!fs.statSync(targetRoot).isDirectory()) throw new Error(`target path is not a directory: ${targetRoot}`);
+
+  const build = buildOutputs(options.platform);
+  const operations = createOperations(build, options.knowledge);
+  const previousManifest = readInstallManifest(targetRoot);
+  const classified = classifyOperations(targetRoot, operations, previousManifest);
+  const conflicts = classified.filter((operation) => operation.action === 'conflict');
+  if (conflicts.length > 0 && !options.force) {
+    throw new Error(`refusing to overwrite unmanaged changes: ${conflicts.map((item) => item.relativePath).join(', ')}`);
+  }
+
+  const backupId = new Date().toISOString().replace(/[:.]/g, '-');
+  if (!options.dryRun && conflicts.length > 0) backupConflicts(targetRoot, classified, backupId);
+  if (!options.dryRun) {
+    for (const operation of classified.filter((item) => item.action !== 'unchanged')) {
+      atomicWrite(operation.destination, operation.content);
+    }
+  }
+
+  const memoryResults = options.knowledge ? writeMemoryTemplates(targetRoot, options.dryRun) : [];
+  const installedPaths = new Set(operations.map((operation) => operation.relativePath));
+  const retainedFiles = (previousManifest?.files || []).filter((file) => !installedPaths.has(file.path));
+  const manifest = {
+    schemaVersion: 1,
+    aeosVersion: require('../package.json').version,
+    platforms: [...new Set([
+      ...(previousManifest?.platforms || []),
+      ...build.outputs.map((output) => output.pipeline.platform)
+    ])].sort(),
+    files: [
+      ...retainedFiles,
+      ...operations.map((operation) => ({
+        path: operation.relativePath,
+        sha256: sha256(operation.content),
+        kind: operation.kind
+      }))
+    ].sort((left, right) => left.path.localeCompare(right.path))
+  };
+  if (!options.dryRun) {
+    atomicWrite(resolveInside(targetRoot, INSTALL_MANIFEST), `${JSON.stringify(manifest, null, 2)}\n`);
+  }
+
+  return { targetRoot, operations: classified, memoryResults, backupId: conflicts.length ? backupId : null };
 }
 
 function main() {
-  const { targetPath, platform } = parseArgs();
-
-  if (!targetPath) {
-    logError('请指定目标项目路径 (--path 或 -d)');
-    process.exit(1);
-  }
-  if (!platform) {
-    logError('请指定规则对应的部署平台 (--platform 或 -p)');
-    logInfo('可选值: cursor, cline, claudecode, antigravity, chatgpt, codex, all');
-    process.exit(1);
-  }
-
-  const targetDir = path.resolve(targetPath);
-  logInfo(`开始将 AEOS 规范部署到项目路径: "${targetDir}" ...`);
-
-  // 1. 自动执行编译以确保最新
-  logInfo('正在执行 AEOS 编译器以同步最新核心规范...');
   try {
-    execSync(`node "${path.join(PROJECT_ROOT, 'adapters', 'compiler.js')}" --platform all`, { stdio: 'ignore' });
-    logSuccess('核心规范编译完成。');
-  } catch (err) {
-    logError(`编译核心规范失败: ${err.message}`);
-    process.exit(1);
-  }
-
-  // 2. 拷贝部署规则文件
-  try {
-    const validPlatforms = ['cursor', 'cline', 'claudecode', 'antigravity', 'chatgpt', 'codex', 'all'];
-    if (!validPlatforms.includes(platform)) {
-      throw new Error(`非法的平台名称: "${platform}"。可选值: ${validPlatforms.join(', ')}`);
+    const options = parseArgs(process.argv.slice(2));
+    const result = install(options);
+    for (const operation of [...result.operations, ...result.memoryResults]) {
+      console.log(`${operation.action.padEnd(9)} ${operation.relativePath}`);
     }
-
-    if (platform === 'cursor' || platform === 'all') {
-      copyRule('.cursorrules', path.join(targetDir, '.cursorrules'));
-    }
-    if (platform === 'cline' || platform === 'all') {
-      copyRule('.clinerules', path.join(targetDir, '.clinerules'));
-    }
-    if (platform === 'claudecode' || platform === 'all') {
-      copyRule('.clauderules', path.join(targetDir, '.clauderules'));
-    }
-    if (platform === 'antigravity' || platform === 'all') {
-      copyRule('AGENTS.md', path.join(targetDir, '.agents', 'AGENTS.md'));
-    }
-    if (platform === 'codex' || platform === 'all') {
-      copyRule('codex_system.md', path.join(targetDir, 'AGENTS.md'));
-    }
-    if (platform === 'chatgpt' || platform === 'all') {
-      copyRule('chatgpt_system.md', path.join(targetDir, 'chatgpt_system.md'));
-    }
-
-    // 3. 初始化记忆模板目录
-    logInfo('正在初始化目标项目的 memory/ 记忆模板目录...');
-    initMemoryTemplates(targetDir);
-
-    logSuccess(`AEOS 规范已成功一键部署到项目！`);
-    process.exit(0);
-  } catch (err) {
-    logError(`部署规则时发生错误: ${err.message}`);
-    process.exit(1);
+    if (result.backupId && !options.dryRun) console.log(`Backed up conflicts to .aeos/backups/${result.backupId}/`);
+    console.log(options.dryRun ? 'Dry run complete; no files were changed.' : `AEOS installed in ${result.targetRoot}`);
+  } catch (error) {
+    console.error(`AEOS integrator error: ${error.message}`);
+    process.exitCode = 1;
   }
 }
 
-main();
+if (require.main === module) main();
+
+module.exports = {
+  INSTALL_MANIFEST,
+  classifyOperations,
+  createOperations,
+  install,
+  parseArgs,
+  assertNoSymlinkTraversal,
+  resolveInside
+};
