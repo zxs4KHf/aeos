@@ -31,6 +31,7 @@ AEOS is a repository guidance layer. It does not override host safety controls o
 
 ## Knowledge Map
 
+- Rapid recovery context: `.context/CURRENT.md`
 - Project facts and commands: `memory/PROJECT_CONTEXT.md`
 - Architecture and durable decisions: `memory/ARCHITECTURE.md` and `memory/DECISIONS.md`
 - Detailed standards: `standards/`

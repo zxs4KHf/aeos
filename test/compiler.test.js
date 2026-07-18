@@ -37,6 +37,7 @@ test('uses Cursor MDC front matter for Cursor output', () => {
 test('renders repository mirrors with source-tree knowledge paths', () => {
   const { outputs } = buildOutputs('codex');
   const mirror = renderMirrorContent(outputs[0].content);
+  assert.match(mirror, /`\.context\/CURRENT\.md`/);
   assert.match(mirror, /`memory\/PROJECT_CONTEXT\.md`/);
   assert.match(mirror, /`standards\/`/);
   assert.doesNotMatch(mirror, /\.aeos\/knowledge/);

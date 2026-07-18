@@ -9,6 +9,7 @@ Last verified: 2026-07-13
 | ADR-003 | Treat host permissions as authoritative; AEOS risk policy is advisory | accepted | 2026-07-13 |
 | ADR-004 | Track installed-file ownership and refuse unsafe overwrites by default | accepted | 2026-07-13 |
 | ADR-005 | Use Node.js standard library and built-in tests for the 2.0 alpha core | accepted | 2026-07-13 |
+| ADR-006 | Adopt Project Context Bootstrap as an optional repository-local continuity protocol | accepted | 2026-07-18 |
 
 ## Consequences
 
@@ -16,3 +17,4 @@ Last verified: 2026-07-13
 - Detailed standards cannot be assumed to be loaded for every task.
 - Runtime enforcement requires platform permissions or hooks and is outside the current core.
 - Installer updates are safe by default but require `--force` when user changes conflict with managed output.
+- `.context/` provides fast recovery and requirement state; `memory/` remains AEOS-owned architecture and product knowledge.

@@ -192,7 +192,8 @@ function renderMirrorContent(content) {
     .replaceAll('`.aeos/PROJECT_CONTEXT.md`', '`memory/PROJECT_CONTEXT.md`')
     .replaceAll('`.aeos/ARCHITECTURE.md`', '`memory/ARCHITECTURE.md`')
     .replaceAll('`.aeos/DECISIONS.md`', '`memory/DECISIONS.md`')
-    .replaceAll('`.aeos/knowledge/', '`');
+    .replaceAll('`.aeos/knowledge/', '`')
+    .replace('- Project facts and commands:', '- Rapid recovery context: `.context/CURRENT.md`\n- Project facts and commands:');
 }
 
 function writeOutputs(build) {

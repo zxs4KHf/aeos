@@ -20,6 +20,7 @@ AEOS is an agent-agnostic engineering policy compiler and optional workflow tool
 - Dependencies: Node.js standard library only.
 - Tests: built-in `node:test` runner.
 - State: JSON and Markdown files; no database or resident process.
+- Continuity protocol: Project Context Bootstrap Skills with committed `.context/` facts and local-only `.context/LOCAL.md`.
 
 ## Commands
 

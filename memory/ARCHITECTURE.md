@@ -30,6 +30,7 @@ policies/core.json + adapters/config.json
 - `adapters/integrator.js` owns safe deployment and installation manifests.
 - `templates/memory/` initializes project-specific facts without overwriting them later.
 - `test/` verifies compiler and installer invariants.
+- `.context/` is the PCB-compatible one-minute recovery layer; it complements `memory/` and does not replace it.
 
 ## Persistence
 

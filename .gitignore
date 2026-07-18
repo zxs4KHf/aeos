@@ -20,6 +20,11 @@ node_modules/
 .env
 .env.local
 
+# Local-only Project Context Bootstrap state
+.context/LOCAL.md
+history/*
+!history/README.md
+
 # IDE/VS Code configurations
 .vscode/
 .idea/
