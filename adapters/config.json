@@ -10,11 +10,13 @@
     "templates"
   ],
   "maxEntryLines": 120,
+  "maxEntryTokens": 900,
   "pipelines": [
     {
       "platform": "codex",
       "aliases": ["agents"],
       "renderer": "agents",
+      "canonical": true,
       "target": "dist/codex/AGENTS.md",
       "installTarget": "AGENTS.md",
       "mirrors": ["AGENTS.md"]
@@ -22,6 +24,8 @@
     {
       "platform": "cursor",
       "renderer": "cursor",
+      "readsAgentsMd": true,
+      "scopedRules": true,
       "target": "dist/cursor/.cursor/rules/aeos-core.mdc",
       "installTarget": ".cursor/rules/aeos-core.mdc"
     },
@@ -29,6 +33,9 @@
       "platform": "claude",
       "aliases": ["claudecode"],
       "renderer": "markdown",
+      "readsAgentsMd": true,
+      "commands": true,
+      "commandsTarget": ".claude/commands",
       "target": "dist/claude/CLAUDE.md",
       "installTarget": "CLAUDE.md"
     },
@@ -41,6 +48,8 @@
     {
       "platform": "copilot",
       "renderer": "markdown",
+      "readsAgentsMd": true,
+      "scopedRules": true,
       "target": "dist/copilot/.github/copilot-instructions.md",
       "installTarget": ".github/copilot-instructions.md"
     },

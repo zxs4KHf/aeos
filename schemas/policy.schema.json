@@ -27,6 +27,12 @@
           "title": { "type": "string", "minLength": 1 },
           "level": { "enum": ["required", "recommended"] },
           "scope": { "type": "string", "minLength": 1 },
+          "appliesTo": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "description": "Optional file globs; platforms with scoped-rule support render an auto-attached reminder for these paths."
+          },
           "statement": { "type": "string", "minLength": 1 },
           "rationale": { "type": "string", "minLength": 1 },
           "evidence": { "type": "string", "minLength": 1 },

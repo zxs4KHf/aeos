@@ -2,6 +2,63 @@
 
 所有 AI Engineering OS (AEOS) 的版本发布与核心演进在此持久化记录。
 
+## [2.0.0-alpha.4] - 2026-07-26
+
+### Added
+
+- `aeos import`：归集存量 Agent 指令文件（CLAUDE.md、.cursorrules、`.cursor/rules/*`、`.clinerules/*`、copilot-instructions、GEMINI.md 等）到 `.aeos/IMPORTED.md`，原文件原地保留、AEOS 生成物自动跳过、重复导入幂等；入口知识地图自动链接导入文件（关闭 DEBT-011 / REQ-011）。
+- Scoped 规则渲染：策略新增可选 `appliesTo` globs；Cursor 生成 auto-attached `.cursor/rules/aeos-<id>.mdc`，Copilot 生成 `.github/instructions/aeos-<id>.instructions.md`（applyTo）。首批落地 DEPS-001（包清单/锁文件）与 DOCS-001（Markdown/docs）（关闭 DEBT-012 / REQ-012）。
+- Workflow 命令包：`workflows/` 编译为 Claude Code 仓库级斜杠命令 `.claude/commands/aeos-{development,incident-response,review-sync}.md`，支持 `$ARGUMENTS`（推进 DEBT-002 / REQ-007）。
+- GitHub Action 新增 `doctor` 模式；新增目标仓库巡检 workflow 模板 `templates/github/aeos-verify-workflow.yml`（PR 上校验受管文件漂移）。
+
+### Changed
+
+- 安装清单新增 `scoped` 与 `command` 文件类别，升级/prune/eject 全生命周期覆盖新产物。
+
+### Fixed
+
+- 增量安装 canonical `AGENTS.md` 时，同步刷新既有 AGENTS.md-aware 平台入口为短指针，不再遗留 `update-available`。
+- 非强制 `eject` 遇到用户修改文件时保留最小可重试 manifest，使后续 `eject --force` 能完成备份与卸载。
+- 新增 `doctor --strict`，让 GitHub Verify 对待更新状态返回失败；普通交互式 doctor 仍区分健康与可升级。
+- GitHub Action 通过环境变量传递输入并限制目标路径在 workspace 内；仓库 CI 实际覆盖 Linux 与 Windows。
+
+---
+
+## [2.0.0-alpha.3] - 2026-07-26
+
+### Added
+
+- 顶层设计 `roadmap/design_2026-07.md`：L0-L4 分层模型、竞争格局（ruler / rulesync / spec-kit）、平台能力矩阵、Non-goals 与路线图。
+- Token 预算门：`maxEntryTokens` 配置 + 编译期强制 + `dist/manifest.json` 记录每入口 token 估算（关闭 DEBT-009）。
+- 评估层 v0：`npm run eval` 输出各平台入口与知识包的上下文成本及指针节省（全平台安装 ~5.1k → ~3.5k token）；`eval/ADHERENCE_PROTOCOL.md` 定义 A/B 遵循度评估协议（推进 DEBT-005/REQ-008）。
+- GitHub Action 复合封装 `action.yml`（init/update + doctor --json 校验）与示例 workflow 模板 `templates/github/aeos-onboard-workflow.yml`（PR 式接入，推进 REQ-006）。
+- `doctor` / `diff` 支持 `--json` 机器可读输出，供 CI 与 Action 消费。
+- LICENSE（MIT，可替换）与英文 `README.en.md`（DEBT-010 仅余 npm 包名验证，建议 scope 包名）。
+
+### Changed
+
+- 自托管镜像渲染改为数据驱动（`install` / `repository` 双路径上下文），移除字符串替换实现，输出逐字节一致（关闭 DEBT-008）。
+
+---
+
+## [2.0.0-alpha.2] - 2026-07-26
+
+### Added
+
+- 统一 CLI `bin/aeos.js`（`build` / `check` / `init` / `update` / `doctor` / `diff` / `eject`），并在 `package.json` 声明 `aeos` bin，作为 npm CLI 分发（DEC-007）的地基。
+- 安装生命周期命令：`doctor` 诊断受管文件状态，`diff` 预览更新，`eject` 安全卸载并保留 `.aeos/` 项目事实。
+- `update` 孤儿文件清理：新版本不再提供的受管文件在哈希未被用户改动时自动删除并移出清单。
+- `canonical` / `readsAgentsMd` 平台能力位：安装 canonical `AGENTS.md` 后，Cursor、Claude Code、Copilot 入口渲染为短指针文件，消除 `--platform all` 的重复上下文（关闭 DEBT-007）。
+- CLI 端到端 fixture 测试、指针渲染与孤儿清理测试（28 项）；CI 矩阵新增 `windows-latest`。
+- 顶层评审文档 `roadmap/review_2026-07.md`，沉淀战略与工程两层优化点。
+
+### Changed
+
+- GitHub onboarding 决策落定为 CLI-first（ADR-007）；GitHub Action 与模板仓库将作为 CLI 的薄封装。
+- 安装清单会移除配置中已不存在的平台记录，并在更新时报告。
+
+---
+
 ## [2.0.0-alpha.1] - 2026-07-13
 
 ### Added

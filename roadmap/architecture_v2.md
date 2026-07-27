@@ -1,8 +1,8 @@
 # AEOS 2.0 Architecture
 
-Status: active
-Version: 2.0.0-alpha.1
-Last verified: 2026-07-13
+Status: active — component reference; strategy and roadmap live in `design_2026-07.md`
+Version: 2.0.0-alpha.4
+Last verified: 2026-07-26
 
 ## Product Boundary
 
@@ -34,7 +34,15 @@ Structured Policy Source
 
 ### Integrator
 
-`adapters/integrator.js` separates always-loaded entry files from on-demand knowledge. Its installation manifest records ownership and hashes so updates can distinguish AEOS-managed files from user content.
+`adapters/integrator.js` separates always-loaded entry files from on-demand knowledge. Its installation manifest records ownership and hashes so updates can distinguish AEOS-managed files from user content. The lifecycle covers install, update (with orphan pruning), doctor, diff, and eject.
+
+### CLI
+
+`bin/aeos.js` is the single command surface over the compiler and integrator, and the planned npm entry point (`npx aeos ...`). The GitHub Action and template onboarding paths wrap this CLI rather than reimplementing installation logic.
+
+### Canonical Entry and Pointers
+
+`AGENTS.md` is the canonical always-loaded entry. Platforms flagged `readsAgentsMd` install a short pointer entry when the canonical entry is present, so multi-client installs do not duplicate context.
 
 ### Knowledge and Project Facts
 
@@ -51,20 +59,19 @@ Detailed reusable guidance is installed under `.aeos/knowledge/`. Target-specifi
 
 ## Next Milestones
 
-### 2.0 Alpha 2: Policy Quality
+See `design_2026-07.md` §7 for the authoritative roadmap (alpha.4: import + scoped rendering + workflow packs; beta: adherence automation + npm publish; GA: public evidence).
 
-- Remove project-specific examples and universal architecture mandates from shared standards.
-- Add explicit applicability, exceptions, and evidence to detailed standards.
-- Add editor validation examples based on the published JSON Schemas.
+### Shipped in 2.0 Alpha 3 (2026-07-26)
 
-### 2.0 Alpha 3: Workflow Packs
+- Top-level design (`design_2026-07.md`): layer model, competitive positioning, capability matrix, non-goals.
+- Token budget gate (`maxEntryTokens`) with per-entry estimates in the manifest.
+- Data-driven install/repository mirror rendering (string-replacement hack removed).
+- Distribution readiness: LICENSE (MIT), English README, composite GitHub Action, `doctor`/`diff --json`.
+- Evaluation layer v0: `npm run eval` context-cost report and the adherence A/B protocol.
 
-- Convert development, review, incident, and specification flows into optional Skills or Commands.
-- Add workflow state artifacts with clear entry, exit, and approval conditions.
-- Support lean and full workflow profiles based on task risk.
+### Shipped in 2.0 Alpha 2 (2026-07-26)
 
-### 2.0 Beta: Evaluation
-
-- Add golden fixture repositories for multiple stacks.
-- Measure instruction adherence, task success, context cost, false blocking, and regression rate.
-- Add `aeos doctor`, `aeos diff`, `aeos update`, and `aeos eject` lifecycle commands.
+- `bin/aeos.js` CLI with build, check, init, update, doctor, diff, and eject.
+- Orphan pruning on update; safe eject that preserves project facts.
+- Canonical `AGENTS.md` with pointer entries for AGENTS.md-aware platforms.
+- Windows added to the CI matrix.

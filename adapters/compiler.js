@@ -34,6 +34,9 @@ function validateConfig(config) {
   if (!Number.isInteger(config.maxEntryLines) || config.maxEntryLines < 20) {
     throw new Error('maxEntryLines must be an integer of at least 20');
   }
+  if (config.maxEntryTokens !== undefined && (!Number.isInteger(config.maxEntryTokens) || config.maxEntryTokens < 100)) {
+    throw new Error('maxEntryTokens must be an integer of at least 100');
+  }
   if (!Array.isArray(config.pipelines) || config.pipelines.length === 0) {
     throw new Error('pipelines must be a non-empty array');
   }
@@ -45,6 +48,23 @@ function validateConfig(config) {
       if (typeof pipeline[field] !== 'string' || !pipeline[field]) {
         throw new Error(`pipeline.${field} must be a non-empty string`);
       }
+    }
+    for (const field of ['canonical', 'readsAgentsMd', 'scopedRules', 'commands']) {
+      if (pipeline[field] !== undefined && typeof pipeline[field] !== 'boolean') {
+        throw new Error(`${pipeline.platform}.${field} must be a boolean`);
+      }
+    }
+    if (pipeline.scopedRules && !['cursor', 'markdown'].includes(pipeline.renderer)) {
+      throw new Error(`${pipeline.platform}.scopedRules requires a cursor or markdown renderer`);
+    }
+    if (pipeline.commandsTarget !== undefined) {
+      if (typeof pipeline.commandsTarget !== 'string' || !pipeline.commandsTarget
+        || path.isAbsolute(pipeline.commandsTarget) || pipeline.commandsTarget.split(/[\\/]/).includes('..')) {
+        throw new Error(`${pipeline.platform}.commandsTarget must stay inside the target project`);
+      }
+    }
+    if (pipeline.canonical && pipeline.readsAgentsMd) {
+      throw new Error(`${pipeline.platform} cannot be both canonical and readsAgentsMd`);
     }
     for (const name of [pipeline.platform, ...(pipeline.aliases || [])]) {
       if (names.has(name)) throw new Error(`duplicate platform or alias: ${name}`);
@@ -62,6 +82,14 @@ function validateConfig(config) {
       if (targets.has(mirror)) throw new Error(`duplicate build target or mirror: ${mirror}`);
       targets.add(mirror);
     }
+  }
+
+  const canonicalPipelines = config.pipelines.filter((pipeline) => pipeline.canonical);
+  if (canonicalPipelines.length > 1) {
+    throw new Error(`at most one pipeline may be canonical; found: ${canonicalPipelines.map((p) => p.platform).join(', ')}`);
+  }
+  if (canonicalPipelines.length === 0 && config.pipelines.some((pipeline) => pipeline.readsAgentsMd)) {
+    throw new Error('readsAgentsMd requires a canonical pipeline');
   }
 }
 
@@ -86,6 +114,12 @@ function validatePolicySet(policySet) {
     }
     if (ids.has(policy.id)) throw new Error(`duplicate policy id: ${policy.id}`);
     ids.add(policy.id);
+    if (policy.appliesTo !== undefined) {
+      if (!Array.isArray(policy.appliesTo) || policy.appliesTo.length === 0
+        || policy.appliesTo.some((glob) => typeof glob !== 'string' || !glob.trim())) {
+        throw new Error(`${policy.id}.appliesTo must be a non-empty array of glob strings`);
+      }
+    }
     const sourcePath = resolveProjectPath(policy.source, `${policy.id}.source`);
     if (!fs.existsSync(sourcePath)) {
       throw new Error(`${policy.id} references missing source: ${policy.source}`);
@@ -115,7 +149,26 @@ function resolvePipelines(config, requestedPlatform) {
   return [pipeline];
 }
 
-function renderBody(policySet) {
+const PATH_CONTEXTS = {
+  install: {
+    recovery: null,
+    facts: '.aeos/PROJECT_CONTEXT.md',
+    architecture: '.aeos/ARCHITECTURE.md',
+    decisions: '.aeos/DECISIONS.md',
+    knowledgePrefix: '.aeos/knowledge/'
+  },
+  repository: {
+    recovery: '.context/CURRENT.md',
+    facts: 'memory/PROJECT_CONTEXT.md',
+    architecture: 'memory/ARCHITECTURE.md',
+    decisions: 'memory/DECISIONS.md',
+    knowledgePrefix: ''
+  }
+};
+
+function renderBody(policySet, context = 'install') {
+  const paths = PATH_CONTEXTS[context];
+  if (!paths) throw new Error(`unknown path context: ${context}`);
   const required = policySet.policies.filter((policy) => policy.level === 'required');
   const recommended = policySet.policies.filter((policy) => policy.level === 'recommended');
   const lines = [
@@ -137,34 +190,96 @@ function renderBody(policySet) {
     '',
     '## Knowledge Map',
     '',
-    '- Project facts and commands: `.aeos/PROJECT_CONTEXT.md`',
-    '- Architecture and durable decisions: `.aeos/ARCHITECTURE.md` and `.aeos/DECISIONS.md`',
-    '- Detailed standards: `.aeos/knowledge/standards/`',
-    '- Task workflows: `.aeos/knowledge/workflows/`',
-    '- Stack-specific guidance: `.aeos/knowledge/playbooks/`',
-    '- Templates: `.aeos/knowledge/templates/`',
+    ...(paths.recovery ? [`- Rapid recovery context: \`${paths.recovery}\``] : []),
+    `- Project facts and commands: \`${paths.facts}\``,
+    `- Architecture and durable decisions: \`${paths.architecture}\` and \`${paths.decisions}\``,
+    `- Detailed standards: \`${paths.knowledgePrefix}standards/\``,
+    `- Task workflows: \`${paths.knowledgePrefix}workflows/\``,
+    `- Stack-specific guidance: \`${paths.knowledgePrefix}playbooks/\``,
+    `- Templates: \`${paths.knowledgePrefix}templates/\``,
     '',
     'Load detailed documents only when they are relevant to the current task. Treat repository code and verified project facts as the source of truth.'
   ];
   return lines.join('\n');
 }
 
-function renderPipeline(pipeline, policySet) {
-  const body = renderBody(policySet);
+function renderPipeline(pipeline, policySet, context = 'install') {
+  const body = renderBody(policySet, context);
   if (pipeline.renderer === 'cursor') {
     return `---\ndescription: AEOS core engineering policy and knowledge map\nalwaysApply: true\n---\n\n${GENERATED_MARKER}\n\n${body}\n`;
   }
-  if (pipeline.renderer === 'system') {
-    return `${GENERATED_MARKER}\n\n${body}\n`;
-  }
-  if (['agents', 'markdown'].includes(pipeline.renderer)) {
+  if (['agents', 'markdown', 'system'].includes(pipeline.renderer)) {
     return `${GENERATED_MARKER}\n\n${body}\n`;
   }
   throw new Error(`unsupported renderer: ${pipeline.renderer}`);
 }
 
+function renderPointer(pipeline, canonicalInstallTarget) {
+  const body = [
+    '# AEOS Project Instructions',
+    '',
+    `This project uses AEOS. The canonical AEOS entry is \`${canonicalInstallTarget}\` at the repository root.`,
+    '',
+    `Read \`${canonicalInstallTarget}\` for the required policies, precedence, and knowledge map.`,
+    `If your client already loads \`${canonicalInstallTarget}\` natively, ignore this file to avoid duplicate context.`
+  ].join('\n');
+  if (pipeline.renderer === 'cursor') {
+    return `---\ndescription: AEOS pointer to the canonical ${canonicalInstallTarget} entry\nalwaysApply: true\n---\n\n${GENERATED_MARKER}\n\n${body}\n`;
+  }
+  return `${GENERATED_MARKER}\n\n${body}\n`;
+}
+
+function renderScopedRule(pipeline, policy) {
+  const globs = policy.appliesTo.join(',');
+  const body = [
+    `# ${policy.id}: ${policy.title}`,
+    '',
+    policy.statement,
+    '',
+    `Evidence expected: ${policy.evidence}`,
+    '',
+    `This is a scoped reminder of an AEOS ${policy.level} policy; the full policy set is in the AEOS entry file.`
+  ].join('\n');
+  if (pipeline.renderer === 'cursor') {
+    return `---\ndescription: ${policy.id} — ${policy.title}\nglobs: ${globs}\nalwaysApply: false\n---\n\n${GENERATED_MARKER}\n\n${body}\n`;
+  }
+  if (pipeline.renderer === 'markdown') {
+    return `---\napplyTo: "${globs}"\n---\n\n${GENERATED_MARKER}\n\n${body}\n`;
+  }
+  throw new Error(`scoped rules are not supported for renderer: ${pipeline.renderer}`);
+}
+
+function scopedRuleTarget(pipeline, policy) {
+  const slug = policy.id.toLowerCase();
+  if (pipeline.renderer === 'cursor') return `.cursor/rules/${slug}.mdc`;
+  if (pipeline.renderer === 'markdown') return `.github/instructions/${slug}.instructions.md`;
+  throw new Error(`scoped rules are not supported for renderer: ${pipeline.renderer}`);
+}
+
+function renderCommand(workflowName, workflowContent) {
+  const title = workflowName.replace(/[-_]+/g, ' ');
+  return [
+    '---',
+    `description: Run the AEOS ${title} workflow for the current task`,
+    'argument-hint: [task or context]',
+    '---',
+    '',
+    GENERATED_MARKER,
+    '',
+    `Follow this AEOS workflow for the task described in $ARGUMENTS (or the current conversation if empty).`,
+    'Apply it proportionally to task risk; skip steps that clearly do not apply and say so.',
+    '',
+    workflowContent.trim(),
+    ''
+  ].join('\n');
+}
+
 function sha256(content) {
   return crypto.createHash('sha256').update(content).digest('hex');
+}
+
+function estimateTokens(content) {
+  return Math.ceil(content.length / 4);
 }
 
 function buildOutputs(requestedPlatform = 'all') {
@@ -175,7 +290,11 @@ function buildOutputs(requestedPlatform = 'all') {
     if (lineCount > config.maxEntryLines) {
       throw new Error(`${pipeline.platform} entry has ${lineCount} lines; budget is ${config.maxEntryLines}`);
     }
-    return { pipeline, content, hash: sha256(content), lineCount };
+    const tokenEstimate = estimateTokens(content);
+    if (config.maxEntryTokens && tokenEstimate > config.maxEntryTokens) {
+      throw new Error(`${pipeline.platform} entry is ~${tokenEstimate} tokens; budget is ${config.maxEntryTokens}`);
+    }
+    return { pipeline, content, hash: sha256(content), lineCount, tokenEstimate };
   });
   return { config, policySet, outputs };
 }
@@ -187,20 +306,15 @@ function atomicWrite(filePath, content) {
   fs.renameSync(temporaryPath, filePath);
 }
 
-function renderMirrorContent(content) {
-  return content
-    .replaceAll('`.aeos/PROJECT_CONTEXT.md`', '`memory/PROJECT_CONTEXT.md`')
-    .replaceAll('`.aeos/ARCHITECTURE.md`', '`memory/ARCHITECTURE.md`')
-    .replaceAll('`.aeos/DECISIONS.md`', '`memory/DECISIONS.md`')
-    .replaceAll('`.aeos/knowledge/', '`')
-    .replace('- Project facts and commands:', '- Rapid recovery context: `.context/CURRENT.md`\n- Project facts and commands:');
+function renderMirror(output, policySet) {
+  return renderPipeline(output.pipeline, policySet, 'repository');
 }
 
 function writeOutputs(build) {
   for (const output of build.outputs) {
     atomicWrite(path.join(PROJECT_ROOT, output.pipeline.target), output.content);
     for (const mirror of output.pipeline.mirrors || []) {
-      atomicWrite(path.join(PROJECT_ROOT, mirror), renderMirrorContent(output.content));
+      atomicWrite(path.join(PROJECT_ROOT, mirror), renderMirror(output, build.policySet));
     }
   }
   writeManifest(build.outputs.length === build.config.pipelines.length ? build : buildOutputs('all'));
@@ -214,7 +328,8 @@ function createManifest(build) {
       platform: output.pipeline.platform,
       path: output.pipeline.target.replace(/\\/g, '/'),
       sha256: output.hash,
-      lines: output.lineCount
+      lines: output.lineCount,
+      tokens: output.tokenEstimate
     }))
   };
 }
@@ -233,7 +348,7 @@ function checkOutputs(build) {
     }
     for (const mirror of output.pipeline.mirrors || []) {
       const mirrorPath = path.join(PROJECT_ROOT, mirror);
-      if (!fs.existsSync(mirrorPath) || fs.readFileSync(mirrorPath, 'utf8') !== renderMirrorContent(output.content)) {
+      if (!fs.existsSync(mirrorPath) || fs.readFileSync(mirrorPath, 'utf8') !== renderMirror(output, build.policySet)) {
         drift.push(mirror);
       }
     }
@@ -289,15 +404,21 @@ if (require.main === module) main();
 
 module.exports = {
   GENERATED_MARKER,
+  PATH_CONTEXTS,
   PROJECT_ROOT,
   buildOutputs,
   checkOutputs,
   createManifest,
+  estimateTokens,
   loadModel,
   parseArgs,
+  renderCommand,
   renderPipeline,
-  renderMirrorContent,
+  renderMirror,
+  renderPointer,
+  renderScopedRule,
   resolveProjectPath,
+  scopedRuleTarget,
   sha256,
   validateConfig,
   validatePolicySet,

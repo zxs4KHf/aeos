@@ -1,9 +1,30 @@
 {
   "name": "aeos",
-  "version": "2.0.0-alpha.1",
+  "version": "2.0.0-alpha.4",
   "private": true,
   "description": "Agent-agnostic engineering policy compiler and workflow toolkit",
+  "license": "MIT",
   "type": "commonjs",
+  "bin": {
+    "aeos": "bin/aeos.js"
+  },
+  "files": [
+    "bin/",
+    "adapters/",
+    "policies/",
+    "schemas/",
+    "constitution/",
+    "standards/",
+    "workflows/",
+    "playbooks/",
+    "templates/",
+    "dist/",
+    "action.yml",
+    "README.md",
+    "README.en.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "engines": {
     "node": ">=20"
   },
@@ -11,6 +32,7 @@
     "build": "node adapters/compiler.js --platform all",
     "check": "node adapters/compiler.js --platform all --check",
     "test": "node --test",
+    "eval": "node eval/context-cost.js",
     "verify": "npm run test && npm run check"
   }
 }

@@ -1,0 +1,74 @@
+name: 'AEOS Onboard'
+description: 'Install or update AEOS engineering policies and knowledge in the current repository'
+branding:
+  icon: 'book-open'
+  color: 'blue'
+inputs:
+  mode:
+    description: 'init (first install), update (refresh installed platforms and prune orphans), or doctor (verify only, fails the job on drift)'
+    required: false
+    default: 'init'
+  platform:
+    description: 'Platform to install for init mode: codex, cursor, claude, cline, copilot, gemini, antigravity, chatgpt, or all'
+    required: false
+    default: 'codex'
+  path:
+    description: 'Target directory inside the workspace'
+    required: false
+    default: '.'
+  knowledge:
+    description: 'Install the on-demand knowledge pack (.aeos/knowledge/)'
+    required: false
+    default: 'true'
+  force:
+    description: 'Overwrite conflicting files after backing them up'
+    required: false
+    default: 'false'
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: Run AEOS
+      shell: bash
+      env:
+        AEOS_ACTION_PATH: ${{ github.action_path }}
+        AEOS_FORCE: ${{ inputs.force }}
+        AEOS_KNOWLEDGE: ${{ inputs.knowledge }}
+        AEOS_MODE: ${{ inputs.mode }}
+        AEOS_PLATFORM: ${{ inputs.platform }}
+        AEOS_TARGET_PATH: ${{ inputs.path }}
+      run: |
+        set -euo pipefail
+        AEOS="$AEOS_ACTION_PATH/bin/aeos.js"
+        AEOS_TARGET_PATH="$(node -e '
+          const path = require("node:path");
+          const root = path.resolve(process.env.GITHUB_WORKSPACE);
+          const target = path.resolve(root, process.env.AEOS_TARGET_PATH);
+          if (target !== root && !target.startsWith(root + path.sep)) {
+            console.error("AEOS target path must stay inside GITHUB_WORKSPACE");
+            process.exit(2);
+          }
+          process.stdout.write(target);
+        ')"
+        FLAGS=()
+        [ "$AEOS_FORCE" = "true" ] && FLAGS+=(--force)
+        case "$AEOS_MODE" in
+          doctor)
+            node "$AEOS" doctor --path "$AEOS_TARGET_PATH" --json --strict
+            exit 0
+            ;;
+          update)
+            node "$AEOS" update --path "$AEOS_TARGET_PATH" "${FLAGS[@]}"
+            ;;
+          init)
+            [ "$AEOS_KNOWLEDGE" = "true" ] || FLAGS+=(--no-knowledge)
+            node "$AEOS" init --path "$AEOS_TARGET_PATH" --platform "$AEOS_PLATFORM" "${FLAGS[@]}"
+            ;;
+          *)
+            echo "Unsupported AEOS mode: $AEOS_MODE" >&2
+            exit 2
+            ;;
+        esac
+        node "$AEOS" doctor --path "$AEOS_TARGET_PATH" --json --strict

@@ -1,0 +1,40 @@
+# Copy this file to .github/workflows/aeos-onboard.yml in the repository you
+# want to onboard, replace <owner>/aeos with the actual AEOS repository, then
+# run it manually from the Actions tab. It installs AEOS and opens a
+# reviewable pull request instead of pushing to the default branch.
+name: AEOS Onboard
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform entry to install (codex, cursor, claude, all, ...)'
+        required: false
+        default: 'codex'
+      mode:
+        description: 'init or update'
+        required: false
+        default: 'init'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  onboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: <owner>/aeos@main
+        with:
+          platform: ${{ inputs.platform }}
+          mode: ${{ inputs.mode }}
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          branch: aeos/onboard
+          title: 'chore: onboard AEOS engineering policies'
+          commit-message: 'chore: onboard AEOS engineering policies'
+          body: |
+            Installs AEOS-managed engineering policy entries and the on-demand
+            knowledge pack. Review the generated files; nothing outside the
+            managed set is modified. Run `aeos eject` to remove cleanly.
