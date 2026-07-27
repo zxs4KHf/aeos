@@ -116,4 +116,9 @@ test('GitHub automation uses strict verification, safe input transport, and a Wi
   const ci = fs.readFileSync(path.join(__dirname, '..', '.github', 'workflows', 'ci.yml'), 'utf8');
   assert.match(ci, /os: \[ubuntu-latest, windows-latest\]/);
   assert.match(ci, /runs-on: \$\{\{ matrix\.os \}\}/);
+
+  const attributes = fs.readFileSync(path.join(__dirname, '..', '.gitattributes'), 'utf8');
+  for (const extension of ['js', 'json', 'md', 'yaml', 'yml']) {
+    assert.match(attributes, new RegExp(`\\*\\.${extension} text eol=lf`));
+  }
 });
