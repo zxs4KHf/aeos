@@ -9,16 +9,42 @@ permissions:
 
 jobs:
   verify:
+    name: Verify (${{ matrix.os }}, Node ${{ matrix.node }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [22, 24]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
+
+  action-smoke:
+    name: Action smoke (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Create target fixture
+        shell: bash
+        run: mkdir -p "$GITHUB_WORKSPACE/.tmp/action-smoke"
+      - name: Install through local Action
+        uses: ./
         with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm run verify
+          path: .tmp/action-smoke
+          platform: all
+          knowledge: 'false'
+      - name: Verify through local Action
+        uses: ./
+        with:
+          path: .tmp/action-smoke
+          mode: doctor

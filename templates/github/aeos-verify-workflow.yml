@@ -1,5 +1,5 @@
 # Copy this file to .github/workflows/aeos-verify.yml in a repository that has
-# AEOS installed, and replace <owner>/aeos with the actual AEOS repository.
+# AEOS installed.
 # It fails the check when AEOS-managed files were hand-edited, deleted, or are
 # stale relative to the pinned AEOS version.
 name: AEOS Verify
@@ -15,7 +15,7 @@ jobs:
   doctor:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: <owner>/aeos@main
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: zxs4KHf/aeos@main
         with:
           mode: doctor

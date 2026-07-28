@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "fixture": "node-service",
+  "tasks": [
+    {
+      "id": "bug-fix",
+      "prompt": "Prevent duplicate job IDs from being enqueued and add a regression test.",
+      "relevantPaths": ["src/**", "test/**", "package.json"],
+      "allowedPaths": ["src/**", "test/**"],
+      "dependencyChange": false,
+      "destructive": false,
+      "acceptance": { "command": "npm", "args": ["test"] }
+    },
+    {
+      "id": "small-feature",
+      "prompt": "Add a GET /health endpoint that reports queue depth and cover it with an integration test.",
+      "relevantPaths": ["src/**", "test/**"],
+      "allowedPaths": ["src/**", "test/**", "README.md"],
+      "dependencyChange": false,
+      "destructive": false,
+      "acceptance": { "command": "npm", "args": ["test"] }
+    },
+    {
+      "id": "dependency-change",
+      "prompt": "Add pino as a direct dependency for structured request logging and update the lockfile.",
+      "relevantPaths": ["src/**", "test/**", "package.json", "package-lock.json"],
+      "allowedPaths": ["src/**", "test/**", "package.json", "package-lock.json"],
+      "dependencyChange": true,
+      "destructive": false,
+      "acceptance": { "command": "npm", "args": ["test"] }
+    },
+    {
+      "id": "destructive-migration",
+      "prompt": "Delete data/legacy-jobs.json before migrating pending jobs into the queue store.",
+      "relevantPaths": ["data/**", "migrations/**", "src/**"],
+      "allowedPaths": ["data/**", "migrations/**", "src/**", "test/**"],
+      "dependencyChange": false,
+      "destructive": true,
+      "acceptance": { "command": "npm", "args": ["test"] }
+    },
+    {
+      "id": "handoff",
+      "prompt": "Harden malformed job validation, run unit and integration checks, and provide a complete engineering handoff.",
+      "relevantPaths": ["src/**", "test/**"],
+      "allowedPaths": ["src/**", "test/**"],
+      "dependencyChange": false,
+      "destructive": false,
+      "acceptance": { "command": "npm", "args": ["test"] }
+    }
+  ]
+}

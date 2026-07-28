@@ -1,0 +1,11 @@
+{
+  "name": "aeos-eval-node-service",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=22" }
+}

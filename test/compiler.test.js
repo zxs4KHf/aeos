@@ -11,6 +11,7 @@ const {
   estimateTokens,
   renderMirror,
   renderPointer,
+  renderScopedRule,
   resolveProjectPath,
   renderPipeline,
   validateConfig,
@@ -130,6 +131,26 @@ test('config validation rejects duplicate aliases and invalid budgets', () => {
   };
   assert.throws(() => validateConfig(base), /duplicate platform or alias/);
   assert.throws(() => validateConfig({ ...base, pipelines: base.pipelines.slice(0, 1), maxEntryLines: 2 }), /maxEntryLines/);
+  assert.throws(() => validateConfig({
+    ...base,
+    pipelines: [{ platform: 'one', aliases: 'not-an-array', renderer: 'markdown', target: 'a', installTarget: 'a' }]
+  }), /aliases must be an array/);
+  assert.throws(() => validateConfig({
+    ...base,
+    pipelines: [{ platform: 'one', renderer: 'unknown', target: 'a', installTarget: 'a' }]
+  }), /renderer is unsupported/);
+  assert.throws(() => validateConfig({
+    ...base,
+    pipelines: [
+      { platform: 'one', renderer: 'markdown', target: 'a', installTarget: 'RULES.md' },
+      { platform: 'two', renderer: 'markdown', target: 'b', installTarget: 'rules.md' }
+    ]
+  }), /duplicate install target/);
+  assert.throws(() => validateConfig({
+    ...base,
+    knowledge: ['standards', 'STANDARDS'],
+    pipelines: base.pipelines.slice(0, 1)
+  }), /knowledge directories must be unique/);
 });
 
 test('compiler paths cannot escape the AEOS repository', () => {
@@ -161,10 +182,31 @@ test('policy validation rejects duplicate IDs and unsupported renderers', () => 
     evidence: 'Test evidence.',
     source: 'constitution/constitution.md'
   };
+  const metadata = { name: 'Test policies', description: 'Test policy set.' };
   assert.throws(() => validatePolicySet({
+    ...metadata,
     schemaVersion: 1,
     precedence: ['host'],
     policies: [valid, { ...valid }]
   }), /duplicate policy id/);
   assert.throws(() => renderPipeline({ renderer: 'unknown' }, { policies: [], precedence: [] }), /unsupported renderer/);
+  assert.throws(() => validatePolicySet({
+    ...metadata,
+    schemaVersion: 1,
+    precedence: ['host'],
+    policies: [{ ...valid, id: 'invalid' }]
+  }), /must match AEOS/);
+});
+
+test('scoped-rule front matter safely quotes titles and globs', () => {
+  const content = renderScopedRule({ renderer: 'cursor' }, {
+    id: 'AEOS-TEST-001',
+    title: 'Quoted: "title"',
+    statement: 'Test.',
+    evidence: 'Evidence.',
+    level: 'required',
+    appliesTo: ['src/**/*.js', 'package.json']
+  });
+  assert.match(content, /description: "AEOS-TEST-001/);
+  assert.match(content, /globs: "src\/\*\*\/\*\.js,package\.json"/);
 });

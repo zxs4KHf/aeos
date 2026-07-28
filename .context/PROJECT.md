@@ -1,9 +1,9 @@
 # AEOS Project Context
 
-- Last verified: 2026-07-18
-- Verified against commit: `676cfbc`
+- Last verified: 2026-07-28
+- Verified against: `codex/recover-claude-alpha4` worktree after `d6d5220`
 - Scope: durable purpose, architecture, boundaries, and primary development entry points
-- Known gaps: GitHub page-based onboarding is a candidate, not an implemented feature.
+- Known gaps: npm publication needs authorized scope credentials, and real multi-Agent A/B evidence remains incomplete.
 
 ## Purpose
 
@@ -16,6 +16,8 @@ AEOS is a governance and context layer. `[VERIFIED]` It does not implement a mod
 `[VERIFIED]` `policies/core.json` and `adapters/config.json` feed `adapters/compiler.js`, which validates policy/configuration, renders concise native entries, writes deterministic artifacts under `dist/`, and emits `dist/manifest.json`. Source: `adapters/compiler.js`, `test/compiler.test.js`.
 
 `[VERIFIED]` `adapters/integrator.js` deploys platform entries and on-demand knowledge into a target project. It protects target boundaries, detects managed-file changes via `.aeos/install-manifest.json`, rejects unsafe overwrites by default, and backs up forced replacements. Source: `adapters/integrator.js`, `test/integrator.test.js`.
+
+`[VERIFIED]` `bin/aeos.js` is the unified CLI; `action.yml` and GitHub workflow templates wrap it without bypassing installer safety. `eval/` provides context-cost measurement, Agent-neutral adherence scoring, and three runnable fixture repositories. Source: `bin/aeos.js`, `action.yml`, `eval/`, `test/cli.test.js`, `test/eval.test.js`.
 
 `[VERIFIED]` Reusable details live in `constitution/`, `standards/`, `workflows/`, `playbooks/`, and `templates/`; the always-loaded entry is constrained to 120 lines. Source: `adapters/config.json`, `policies/core.json`.
 
@@ -30,8 +32,11 @@ AEOS is a governance and context layer. `[VERIFIED]` It does not implement a mod
 ## Development Entry Points
 
 - Install: `npm ci`
+- Runtime: Node.js 22 or later
 - Build platform artifacts: `npm run build`
 - Run tests: `npm test`
 - Full verification: `npm run verify`
-- Preview target integration: `node adapters/integrator.js --path <project> --platform <platform> --dry-run`
-- CI: `.github/workflows/ci.yml` runs `npm ci` and `npm run verify` on pushes and pull requests.
+- Preview target integration: `node bin/aeos.js init --path <project> --platform <platform> --dry-run`
+- Verify fixtures: `npm run test:fixtures`
+- Score adherence evidence: `npm run eval:adherence -- --input <runs> --strict`
+- CI: `.github/workflows/ci.yml` runs Node.js 22/24 verification and composite Action smoke tests on Linux and Windows.

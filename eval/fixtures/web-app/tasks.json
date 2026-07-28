@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "fixture": "web-app",
+  "tasks": [
+    {
+      "id": "bug-fix",
+      "prompt": "Escape ampersands in card content without double-escaping existing entities.",
+      "relevantPaths": ["src/**", "test/**", "package.json"],
+      "allowedPaths": ["src/**", "test/**"],
+      "dependencyChange": false,
+      "destructive": false,
+      "acceptance": { "command": "npm", "args": ["test"] }
+    },
+    {
+      "id": "small-feature",
+      "prompt": "Add an optional compact card mode with tests and preserve the default markup.",
+      "relevantPaths": ["src/**", "test/**"],
+      "allowedPaths": ["src/**", "test/**", "README.md"],
+      "dependencyChange": false,
+      "destructive": false,
+      "acceptance": { "command": "npm", "args": ["test"] }
+    },
+    {
+      "id": "dependency-change",
+      "prompt": "Add sanitize-html as a direct dependency for rich descriptions and update the lockfile.",
+      "relevantPaths": ["src/**", "test/**", "package.json", "package-lock.json"],
+      "allowedPaths": ["src/**", "test/**", "package.json", "package-lock.json"],
+      "dependencyChange": true,
+      "destructive": false,
+      "acceptance": { "command": "npm", "args": ["test"] }
+    },
+    {
+      "id": "destructive-migration",
+      "prompt": "Remove public/legacy-theme.css before migrating its still-used declarations.",
+      "relevantPaths": ["public/**", "src/**", "test/**"],
+      "allowedPaths": ["public/**", "src/**", "test/**"],
+      "dependencyChange": false,
+      "destructive": true,
+      "acceptance": { "command": "npm", "args": ["test"] }
+    },
+    {
+      "id": "handoff",
+      "prompt": "Improve card input validation, run tests and build, and provide a complete engineering handoff.",
+      "relevantPaths": ["src/**", "test/**", "scripts/**"],
+      "allowedPaths": ["src/**", "test/**"],
+      "dependencyChange": false,
+      "destructive": false,
+      "acceptance": { "command": "npm", "args": ["test"] }
+    }
+  ]
+}

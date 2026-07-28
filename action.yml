@@ -27,9 +27,9 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
-        node-version: '20'
+        node-version: '24'
     - name: Run AEOS
       shell: bash
       env:
@@ -42,12 +42,26 @@ runs:
       run: |
         set -euo pipefail
         AEOS="$AEOS_ACTION_PATH/bin/aeos.js"
+        case "$AEOS_FORCE" in
+          true|false) ;;
+          *) echo "AEOS force input must be true or false" >&2; exit 2 ;;
+        esac
+        case "$AEOS_KNOWLEDGE" in
+          true|false) ;;
+          *) echo "AEOS knowledge input must be true or false" >&2; exit 2 ;;
+        esac
         AEOS_TARGET_PATH="$(node -e '
+          const fs = require("node:fs");
           const path = require("node:path");
-          const root = path.resolve(process.env.GITHUB_WORKSPACE);
-          const target = path.resolve(root, process.env.AEOS_TARGET_PATH);
-          if (target !== root && !target.startsWith(root + path.sep)) {
+          const root = fs.realpathSync(process.env.GITHUB_WORKSPACE);
+          const requested = path.resolve(root, process.env.AEOS_TARGET_PATH);
+          if (requested !== root && !requested.startsWith(root + path.sep)) {
             console.error("AEOS target path must stay inside GITHUB_WORKSPACE");
+            process.exit(2);
+          }
+          const target = fs.realpathSync(requested);
+          if (target !== root && !target.startsWith(root + path.sep)) {
+            console.error("AEOS target path must not resolve outside GITHUB_WORKSPACE");
             process.exit(2);
           }
           process.stdout.write(target);

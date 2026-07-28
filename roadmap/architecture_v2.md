@@ -1,8 +1,8 @@
 # AEOS 2.0 Architecture
 
 Status: active — component reference; strategy and roadmap live in `design_2026-07.md`
-Version: 2.0.0-alpha.4
-Last verified: 2026-07-26
+Version: 2.0.0-alpha.5
+Last verified: 2026-07-28
 
 ## Product Boundary
 

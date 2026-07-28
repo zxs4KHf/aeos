@@ -1,0 +1,11 @@
+{
+  "name": "aeos-eval-web-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "node scripts/build.js --check",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=22" }
+}

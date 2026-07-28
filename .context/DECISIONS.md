@@ -1,6 +1,6 @@
 # AEOS Decision Index
 
-- Last verified: 2026-07-26
+- Last verified: 2026-07-28
 - Authority: explicit user requests and accepted AEOS decisions are authoritative; historical v0.1 design documents are not.
 
 | Decision | Status | Consequence | Source | Reconsider when |
@@ -17,3 +17,6 @@
 | DEC-010 | Accepted | Default license is MIT ("AEOS contributors"); maintainer may swap before npm publishing. | User mandate "随便怎么迭代" on 2026-07-26; `LICENSE` | The maintainer chooses a different license. |
 | DEC-011 | Accepted | `aeos import` preserves existing instructions verbatim (no mechanical prose-to-policy conversion); entries link `.aeos/IMPORTED.md`. | User mandate for autonomous best choices on 2026-07-26; `memory/DECISIONS.md` ADR-011 | An LLM-assisted structured import proves reliable. |
 | DEC-012 | Accepted | Scoped rules come from explicit `appliesTo` globs (first: DEPS-001, DOCS-001) rendered for Cursor and Copilot. | Same mandate; `memory/DECISIONS.md` ADR-012; `policies/core.json` | Semantic-scope inference or more platforms with scoped mechanisms. |
+| DEC-013 | Accepted | Public npm identity is `@zxs4khf/aeos`; publishing still requires explicit npm authorization. | `memory/DECISIONS.md` ADR-013; `package.json` | Repository ownership or npm scope ownership changes. |
+| DEC-014 | Accepted | Minimum runtime is Node.js 22; CI covers Node.js 22 and 24 on Linux and Windows. | `memory/DECISIONS.md` ADR-014; `.github/workflows/ci.yml` | The supported Node.js release schedule changes. |
+| DEC-015 | Accepted | Adherence scoring consumes a versioned Agent-neutral evidence schema. | `memory/DECISIONS.md` ADR-015; `eval/run.schema.json` | A shared upstream transcript standard becomes viable. |

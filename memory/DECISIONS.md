@@ -1,6 +1,6 @@
 # AEOS Decision Index
 
-Last verified: 2026-07-26
+Last verified: 2026-07-28
 
 | ID | Decision | Status | Date |
 | --- | --- | --- | --- |
@@ -16,6 +16,9 @@ Last verified: 2026-07-26
 | ADR-010 | License under MIT by default; the maintainer may swap it before publishing | accepted | 2026-07-26 |
 | ADR-011 | Import preserves pre-existing instructions verbatim in `.aeos/IMPORTED.md`; no automatic prose-to-policy conversion | accepted | 2026-07-26 |
 | ADR-012 | Scoped platform rules derive from explicit `appliesTo` globs on policies, not from inferred semantic scopes | accepted | 2026-07-26 |
+| ADR-013 | Publish under the scoped identity `@zxs4khf/aeos`; keep the package public but require explicit npm authorization for release | accepted | 2026-07-28 |
+| ADR-014 | Support maintained Node.js lines only: minimum Node.js 22, with CI coverage on Node.js 22 and 24 | accepted | 2026-07-28 |
+| ADR-015 | Measure adherence through a versioned, Agent-neutral evidence schema; provider-specific transcript adapters stay outside the scorer core | accepted | 2026-07-28 |
 
 ## Consequences
 
@@ -26,3 +29,5 @@ Last verified: 2026-07-26
 - `.context/` provides fast recovery and requirement state; `memory/` remains AEOS-owned architecture and product knowledge.
 - Distribution work (Action, templates) must not bypass the CLI's safety and manifest semantics.
 - Pointer entries depend on the canonical `AGENTS.md` being installed; single-platform installs still render full bodies.
+- npm publication remains a human-authorized release action even though package metadata is public-ready.
+- Evaluation claims require raw transcripts, normalized evidence, diffs, acceptance logs, model identity, and run parameters; synthetic scorer tests are not product evidence.

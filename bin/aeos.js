@@ -17,8 +17,9 @@ Target-project commands:
   import  --path <dir> [--dry-run]  Collect existing agent instruction files into .aeos/IMPORTED.md
   update  --path <dir> [--dry-run] [--force]
                                     Refresh all previously installed platforms and prune orphans
-  doctor  --path <dir> [--strict]   Diagnose managed files; strict also fails when updates are pending
-  diff    --path <dir>              Preview exactly what update would change
+  doctor  --path <dir> [--json] [--strict]
+                                    Diagnose managed files; strict also fails when updates are pending
+  diff    --path <dir> [--json]     Preview exactly what update would change
   eject   --path <dir> [--dry-run] [--force]
                                     Remove AEOS-managed files (project facts in .aeos/ are kept)
 
@@ -62,7 +63,10 @@ function runCheck(argv) {
 }
 
 function runInit(argv) {
-  const options = integrator.parseTargetArgs(argv, { requirePlatform: true });
+  const options = integrator.parseTargetArgs(argv, {
+    requirePlatform: true,
+    allowedFlags: ['--dry-run', '--force', '--no-knowledge']
+  });
   const result = integrator.install(options);
   printOperations([...result.operations, ...result.pruneResults, ...result.memoryResults]);
   if (result.backupId && !options.dryRun) console.log(`Backed up conflicts to .aeos/backups/${result.backupId}/`);
@@ -70,7 +74,7 @@ function runInit(argv) {
 }
 
 function runImport(argv) {
-  const options = integrator.parseTargetArgs(argv, { allowPlatform: false });
+  const options = integrator.parseTargetArgs(argv, { allowPlatform: false, allowedFlags: ['--dry-run'] });
   const result = integrator.importInstructions(options);
   for (const relativePath of result.imported) console.log(`import         ${relativePath}`);
   for (const entry of result.skipped) console.log(`skip (${entry.reason.padEnd(16)}) ${entry.relativePath}`);
@@ -91,7 +95,7 @@ function runImport(argv) {
 }
 
 function runUpdate(argv) {
-  const options = integrator.parseTargetArgs(argv, { allowPlatform: false });
+  const options = integrator.parseTargetArgs(argv, { allowPlatform: false, allowedFlags: ['--dry-run', '--force'] });
   const result = integrator.update(options);
   printOperations([...result.operations, ...result.pruneResults, ...result.memoryResults]);
   if (result.droppedPlatforms.length > 0) {
@@ -102,7 +106,7 @@ function runUpdate(argv) {
 }
 
 function runDoctor(argv) {
-  const options = integrator.parseTargetArgs(argv, { allowPlatform: false });
+  const options = integrator.parseTargetArgs(argv, { allowPlatform: false, allowedFlags: ['--json', '--strict'] });
   const report = integrator.doctor(options);
   if (options.json) {
     console.log(JSON.stringify({
@@ -131,7 +135,7 @@ function runDoctor(argv) {
 }
 
 function runDiff(argv) {
-  const options = integrator.parseTargetArgs(argv, { allowPlatform: false });
+  const options = integrator.parseTargetArgs(argv, { allowPlatform: false, allowedFlags: ['--json'] });
   const result = integrator.diffInstall(options);
   if (options.json) {
     console.log(JSON.stringify({
@@ -152,7 +156,7 @@ function runDiff(argv) {
 }
 
 function runEject(argv) {
-  const options = integrator.parseTargetArgs(argv, { allowPlatform: false });
+  const options = integrator.parseTargetArgs(argv, { allowPlatform: false, allowedFlags: ['--dry-run', '--force'] });
   const result = integrator.eject(options);
   printOperations(result.results);
   const kept = result.results.filter((entry) => entry.action === 'kept-modified');

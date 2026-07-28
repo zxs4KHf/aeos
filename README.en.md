@@ -2,7 +2,7 @@
 
 AEOS is an engineering-policy compiler and workflow toolkit for AI coding agents. It maintains platform-neutral engineering rules as a structured, machine-validated policy source and renders native entry files for Codex, Cursor, Claude Code, Cline, GitHub Copilot, Gemini, Antigravity, and API agents.
 
-Current version: `2.0.0-alpha.4` · 中文文档: [README.md](README.md)
+Current version: `2.0.0-alpha.5` · 中文文档: [README.md](README.md)
 
 > AEOS is a governance and context layer, not an agent runtime. It never bypasses or replaces the host platform's sandbox, permissions, or approval controls.
 
@@ -18,7 +18,7 @@ Rule-syncing tools distribute the same Markdown to every client. AEOS goes furth
 
 ## Quick Start
 
-Requires Node.js 20+.
+Requires Node.js 22+ (Node 24 LTS recommended).
 
 ```bash
 npm ci
@@ -30,6 +30,7 @@ Install into a target project:
 ```bash
 node bin/aeos.js init --path /path/to/project --platform cursor --dry-run   # preview
 node bin/aeos.js init --path /path/to/project --platform cursor            # install
+npx @zxs4khf/aeos init --path /path/to/project --platform cursor           # after npm publishing
 ```
 
 ## CLI
@@ -52,7 +53,7 @@ Migrating an existing project? Run `aeos import` first: it preserves your curren
 Use the bundled composite action to onboard or refresh a repository from CI:
 
 ```yaml
-- uses: <owner>/aeos@main
+- uses: zxs4KHf/aeos@main
   with:
     platform: codex     # or cursor, claude, all, ...
     mode: init          # or update
@@ -62,7 +63,7 @@ Pair it with a PR-creating action for reviewable onboarding; see `templates/gith
 
 ## Evaluation
 
-`npm run eval` reports the context cost of every platform entry (lines, estimated tokens, pointer savings) and the on-demand knowledge pack. The adherence-testing protocol for measuring whether policies actually change agent behavior lives in `eval/ADHERENCE_PROTOCOL.md`.
+`npm run eval` reports the context cost of every platform entry (lines, estimated tokens, pointer savings) and the on-demand knowledge pack. `npm run test:fixtures` verifies the three golden repositories, while `npm run eval:adherence -- --input <runs> --strict` scores normalized A/B evidence. The protocol and evidence contract live in `eval/ADHERENCE_PROTOCOL.md` and `eval/run.schema.json`.
 
 ## Editing Policy
 
@@ -74,7 +75,7 @@ npm run build && npm run verify
 
 ## Publishing Status
 
-The package is still `private: true`. Before publishing to npm: verify the package name (a scoped name such as `@<owner>/aeos` is the safe default) and review the LICENSE (MIT by default — swap if you prefer another license).
+The public package identity is `@zxs4khf/aeos` and the registry name is currently available. Publishing still requires an authorized npm account for that scope; this machine is not logged in. The default license is MIT.
 
 ## License
 

@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const { randomUUID } = require('node:crypto');
 
 const {
   GENERATED_MARKER,
@@ -15,8 +16,15 @@ const {
 const INSTALL_MANIFEST = '.aeos/install-manifest.json';
 const IMPORTED_FILE = '.aeos/IMPORTED.md';
 const IMPORTED_LINE = '- Imported repository instructions: `.aeos/IMPORTED.md`';
+const TARGET_FLAGS = new Set(['--dry-run', '--force', '--no-knowledge', '--json', '--strict']);
+const MANAGED_KINDS = new Set(['entry', 'scoped', 'command', 'knowledge']);
 
-function parseTargetArgs(argv, { requirePlatform = false, allowPlatform = true } = {}) {
+function parseTargetArgs(argv, {
+  requirePlatform = false,
+  allowPlatform = true,
+  allowedFlags = [...TARGET_FLAGS]
+} = {}) {
+  const enabledFlags = new Set(allowedFlags);
   const options = {
     targetPath: '', platform: '', dryRun: false, force: false, knowledge: true, json: false, strict: false
   };
@@ -30,6 +38,8 @@ function parseTargetArgs(argv, { requirePlatform = false, allowPlatform = true }
       if (!argv[index + 1]) throw new Error(`${argument} requires a value`);
       options.platform = argv[index + 1].toLowerCase();
       index += 1;
+    } else if (TARGET_FLAGS.has(argument) && !enabledFlags.has(argument)) {
+      throw new Error(`${argument} is not supported for this command`);
     } else if (argument === '--dry-run') {
       options.dryRun = true;
     } else if (argument === '--force') {
@@ -119,13 +129,36 @@ function readInstallManifest(targetRoot) {
   if (!fs.existsSync(manifestPath)) return null;
   try {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    if (manifest.schemaVersion !== 1 || !Array.isArray(manifest.files)) {
-      throw new Error('unsupported manifest shape');
-    }
-    return manifest;
+    return validateInstallManifest(manifest);
   } catch (error) {
     throw new Error(`cannot read existing ${INSTALL_MANIFEST}: ${error.message}`);
   }
+}
+
+function validateInstallManifest(manifest) {
+  if (!manifest || manifest.schemaVersion !== 1 || !Array.isArray(manifest.platforms) || !Array.isArray(manifest.files)) {
+    throw new Error('unsupported manifest shape');
+  }
+  if (manifest.platforms.some((platform) => typeof platform !== 'string' || !platform)
+    || new Set(manifest.platforms).size !== manifest.platforms.length) {
+    throw new Error('manifest platforms must be unique non-empty strings');
+  }
+  const paths = new Set();
+  for (const file of manifest.files) {
+    if (!file || typeof file.path !== 'string' || !file.path || path.isAbsolute(file.path)
+      || /^[a-z]:/i.test(file.path) || file.path.includes('\\') || file.path.split('/').includes('..')
+      || ['.', INSTALL_MANIFEST].includes(file.path) || /[\r\n\0]/.test(file.path)) {
+      throw new Error(`invalid managed path: ${file?.path ?? '<missing>'}`);
+    }
+    const pathKey = file.path.toLowerCase();
+    if (paths.has(pathKey)) throw new Error(`duplicate managed path: ${file.path}`);
+    paths.add(pathKey);
+    if (typeof file.sha256 !== 'string' || !/^[a-f0-9]{64}$/.test(file.sha256)) {
+      throw new Error(`invalid managed hash for ${file.path}`);
+    }
+    if (!MANAGED_KINDS.has(file.kind)) throw new Error(`invalid managed kind for ${file.path}: ${file.kind}`);
+  }
+  return manifest;
 }
 
 function injectImportedLine(content) {
@@ -223,13 +256,18 @@ function classifyOrphans(targetRoot, previousManifest, expectedPaths) {
 
 function atomicWrite(filePath, content) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  const temporaryPath = `${filePath}.tmp-${process.pid}`;
-  fs.writeFileSync(temporaryPath, content, 'utf8');
-  fs.renameSync(temporaryPath, filePath);
+  const temporaryPath = `${filePath}.tmp-${process.pid}-${randomUUID()}`;
+  try {
+    fs.writeFileSync(temporaryPath, content, { encoding: 'utf8', flag: 'wx' });
+    fs.renameSync(temporaryPath, filePath);
+  } finally {
+    if (fs.existsSync(temporaryPath)) fs.rmSync(temporaryPath, { force: true });
+  }
 }
 
 function backupFile(targetRoot, relativePath, sourcePath, backupId) {
   const backupPath = resolveInside(targetRoot, `.aeos/backups/${backupId}/${relativePath}`);
+  assertNoSymlinkTraversal(targetRoot, backupPath);
   fs.mkdirSync(path.dirname(backupPath), { recursive: true });
   fs.copyFileSync(sourcePath, backupPath);
 }
@@ -244,7 +282,47 @@ function removeEmptyParents(targetRoot, filePath) {
   }
 }
 
-function writeMemoryTemplates(targetRoot, dryRun) {
+function applyMutationTransaction(targetRoot, mutations) {
+  const destinations = new Set();
+  const snapshots = mutations.map((mutation) => {
+    assertNoSymlinkTraversal(targetRoot, mutation.destination);
+    const key = mutation.destination.toLowerCase();
+    if (destinations.has(key)) throw new Error(`duplicate transaction destination: ${mutation.relativePath}`);
+    destinations.add(key);
+    if (!fs.existsSync(mutation.destination)) return { mutation, existed: false, content: null };
+    if (!fs.statSync(mutation.destination).isFile()) {
+      throw new Error(`transaction destination is not a file: ${mutation.relativePath}`);
+    }
+    return { mutation, existed: true, content: fs.readFileSync(mutation.destination) };
+  });
+
+  try {
+    for (const mutation of mutations) {
+      if (mutation.action === 'write') atomicWrite(mutation.destination, mutation.content);
+      else if (mutation.action === 'remove' && fs.existsSync(mutation.destination)) {
+        fs.rmSync(mutation.destination);
+        removeEmptyParents(targetRoot, mutation.destination);
+      } else if (!['write', 'remove'].includes(mutation.action)) {
+        throw new Error(`unsupported transaction action: ${mutation.action}`);
+      }
+    }
+  } catch (error) {
+    const rollbackErrors = [];
+    for (const snapshot of snapshots.reverse()) {
+      try {
+        if (snapshot.existed) atomicWrite(snapshot.mutation.destination, snapshot.content);
+        else if (fs.existsSync(snapshot.mutation.destination)) fs.rmSync(snapshot.mutation.destination, { force: true });
+        if (!snapshot.existed) removeEmptyParents(targetRoot, snapshot.mutation.destination);
+      } catch (rollbackError) {
+        rollbackErrors.push(`${snapshot.mutation.relativePath}: ${rollbackError.message}`);
+      }
+    }
+    const suffix = rollbackErrors.length > 0 ? `; rollback errors: ${rollbackErrors.join('; ')}` : '';
+    throw new Error(`managed-file transaction failed: ${error.message}${suffix}`);
+  }
+}
+
+function planMemoryTemplates(targetRoot) {
   const templateRoot = path.join(PROJECT_ROOT, 'templates', 'memory');
   const results = [];
   for (const sourcePath of collectFiles(path.join(PROJECT_ROOT, 'templates'), 'memory')) {
@@ -253,10 +331,14 @@ function writeMemoryTemplates(targetRoot, dryRun) {
     const destination = resolveInside(targetRoot, relativePath);
     assertNoSymlinkTraversal(targetRoot, destination);
     if (fs.existsSync(destination)) {
-      results.push({ relativePath, action: 'unchanged' });
+      results.push({ relativePath, destination, action: 'unchanged', content: null });
     } else {
-      results.push({ relativePath, action: 'create' });
-      if (!dryRun) atomicWrite(destination, fs.readFileSync(sourcePath, 'utf8'));
+      results.push({
+        relativePath,
+        destination,
+        action: 'create',
+        content: fs.readFileSync(sourcePath, 'utf8')
+      });
     }
   }
   return results;
@@ -320,20 +402,6 @@ function installCore(targetRoot, requestedNames, options) {
   const needsBackup = conflicts.length > 0 || forcedOrphans.length > 0;
   const backupId = new Date().toISOString().replace(/[:.]/g, '-');
 
-  if (!options.dryRun) {
-    for (const operation of conflicts) backupFile(targetRoot, operation.relativePath, operation.destination, backupId);
-    for (const orphan of forcedOrphans) backupFile(targetRoot, orphan.relativePath, orphan.destination, backupId);
-    for (const operation of plan.classified.filter((item) => item.action !== 'unchanged')) {
-      atomicWrite(operation.destination, operation.content);
-    }
-    for (const orphan of plan.orphans) {
-      if (orphan.action === 'prune' || (options.force && orphan.action === 'prune-conflict')) {
-        fs.rmSync(orphan.destination);
-        removeEmptyParents(targetRoot, orphan.destination);
-      }
-    }
-  }
-
   const pruneResults = plan.orphans.map((orphan) => {
     if (orphan.action === 'prune') return { relativePath: orphan.relativePath, action: 'prune' };
     if (orphan.action === 'prune-missing') return { relativePath: orphan.relativePath, action: 'prune-missing' };
@@ -342,7 +410,8 @@ function installCore(targetRoot, requestedNames, options) {
       : { relativePath: orphan.relativePath, action: 'orphan-kept' };
   });
 
-  const memoryResults = options.knowledge ? writeMemoryTemplates(targetRoot, options.dryRun) : [];
+  const memoryPlan = options.knowledge ? planMemoryTemplates(targetRoot) : [];
+  const memoryResults = memoryPlan.map(({ relativePath, action }) => ({ relativePath, action }));
   const requestedPaths = new Set(plan.classified.map((operation) => operation.relativePath));
   const orphanPaths = new Set(plan.orphans.map((orphan) => orphan.relativePath));
   const retainedFiles = (plan.previousManifest?.files || []).filter((file) => (
@@ -362,7 +431,41 @@ function installCore(targetRoot, requestedNames, options) {
     ].sort((left, right) => left.path.localeCompare(right.path))
   };
   if (!options.dryRun) {
-    atomicWrite(resolveInside(targetRoot, INSTALL_MANIFEST), `${JSON.stringify(manifest, null, 2)}\n`);
+    for (const operation of conflicts) backupFile(targetRoot, operation.relativePath, operation.destination, backupId);
+    for (const orphan of forcedOrphans) backupFile(targetRoot, orphan.relativePath, orphan.destination, backupId);
+    const manifestPath = resolveInside(targetRoot, INSTALL_MANIFEST);
+    const mutations = [
+      ...plan.classified
+        .filter((operation) => operation.action !== 'unchanged')
+        .map((operation) => ({
+          relativePath: operation.relativePath,
+          destination: operation.destination,
+          action: 'write',
+          content: operation.content
+        })),
+      ...plan.orphans
+        .filter((orphan) => orphan.action === 'prune' || (options.force && orphan.action === 'prune-conflict'))
+        .map((orphan) => ({
+          relativePath: orphan.relativePath,
+          destination: orphan.destination,
+          action: 'remove'
+        })),
+      ...memoryPlan
+        .filter((operation) => operation.action === 'create')
+        .map((operation) => ({
+          relativePath: operation.relativePath,
+          destination: operation.destination,
+          action: 'write',
+          content: operation.content
+        })),
+      {
+        relativePath: INSTALL_MANIFEST,
+        destination: manifestPath,
+        action: 'write',
+        content: `${JSON.stringify(manifest, null, 2)}\n`
+      }
+    ];
+    applyMutationTransaction(targetRoot, mutations);
   }
 
   return {
@@ -478,6 +581,7 @@ function collectImportSources(targetRoot) {
   const candidates = [...IMPORT_ROOT_FILES];
   for (const directory of IMPORT_DIRECTORIES) {
     const absolute = resolveInside(targetRoot, directory);
+    assertNoSymlinkTraversal(targetRoot, absolute);
     if (!fs.existsSync(absolute) || !fs.statSync(absolute).isDirectory()) continue;
     for (const entry of fs.readdirSync(absolute, { withFileTypes: true })) {
       if (entry.isFile()) candidates.push(`${directory}/${entry.name}`);
@@ -542,38 +646,51 @@ function eject(options) {
 
   const backupId = new Date().toISOString().replace(/[:.]/g, '-');
   let backupUsed = false;
-  const results = manifest.files.map((file) => {
+  const planned = manifest.files.map((file) => {
     const destination = resolveInside(targetRoot, file.path);
     assertNoSymlinkTraversal(targetRoot, destination);
-    if (!fs.existsSync(destination)) return { relativePath: file.path, action: 'already-missing' };
+    if (!fs.existsSync(destination)) return {
+      relativePath: file.path, destination, clean: true, action: 'already-missing'
+    };
     const clean = sha256(fs.readFileSync(destination, 'utf8')) === file.sha256;
-    if (!clean && !options.force) return { relativePath: file.path, action: 'kept-modified' };
-    if (!options.dryRun) {
-      if (!clean) {
-        backupFile(targetRoot, file.path, destination, backupId);
-        backupUsed = true;
-      }
-      fs.rmSync(destination);
-      removeEmptyParents(targetRoot, destination);
-    }
-    return { relativePath: file.path, action: 'remove' };
+    if (!clean && !options.force) return {
+      relativePath: file.path, destination, clean, action: 'kept-modified'
+    };
+    return { relativePath: file.path, destination, clean, action: 'remove' };
   });
+  const results = planned.map(({ relativePath, action }) => ({ relativePath, action }));
 
   if (!options.dryRun) {
     const manifestPath = resolveInside(targetRoot, INSTALL_MANIFEST);
+    for (const entry of planned.filter((item) => item.action === 'remove' && !item.clean)) {
+      backupFile(targetRoot, entry.relativePath, entry.destination, backupId);
+      backupUsed = true;
+    }
     const keptPaths = new Set(results
       .filter((entry) => entry.action === 'kept-modified')
       .map((entry) => entry.relativePath));
+    const mutations = planned
+      .filter((entry) => entry.action === 'remove')
+      .map((entry) => ({
+        relativePath: entry.relativePath,
+        destination: entry.destination,
+        action: 'remove'
+      }));
     if (keptPaths.size > 0) {
       const retryManifest = {
         ...manifest,
         files: manifest.files.filter((file) => keptPaths.has(file.path))
       };
-      atomicWrite(manifestPath, `${JSON.stringify(retryManifest, null, 2)}\n`);
+      mutations.push({
+        relativePath: INSTALL_MANIFEST,
+        destination: manifestPath,
+        action: 'write',
+        content: `${JSON.stringify(retryManifest, null, 2)}\n`
+      });
     } else {
-      fs.rmSync(manifestPath);
-      removeEmptyParents(targetRoot, manifestPath);
+      mutations.push({ relativePath: INSTALL_MANIFEST, destination: manifestPath, action: 'remove' });
     }
+    applyMutationTransaction(targetRoot, mutations);
   }
   return { targetRoot, results, backupId: backupUsed ? backupId : null };
 }
@@ -610,5 +727,6 @@ module.exports = {
   planInstall,
   update,
   assertNoSymlinkTraversal,
-  resolveInside
+  resolveInside,
+  validateInstallManifest
 };

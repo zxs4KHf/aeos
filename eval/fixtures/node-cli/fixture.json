@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "name": "node-cli",
+  "verify": [
+    { "command": "node", "args": ["--test", "test/*.test.js"] }
+  ]
+}

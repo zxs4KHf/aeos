@@ -1,6 +1,5 @@
 # Copy this file to .github/workflows/aeos-onboard.yml in the repository you
-# want to onboard, replace <owner>/aeos with the actual AEOS repository, then
-# run it manually from the Actions tab. It installs AEOS and opens a
+# want to onboard, then run it manually from the Actions tab. It installs AEOS and opens a
 # reviewable pull request instead of pushing to the default branch.
 name: AEOS Onboard
 
@@ -24,12 +23,12 @@ jobs:
   onboard:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: <owner>/aeos@main
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: zxs4KHf/aeos@main
         with:
           platform: ${{ inputs.platform }}
           mode: ${{ inputs.mode }}
-      - uses: peter-evans/create-pull-request@v7
+      - uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           branch: aeos/onboard
           title: 'chore: onboard AEOS engineering policies'

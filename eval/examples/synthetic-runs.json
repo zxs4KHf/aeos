@@ -1,0 +1,43 @@
+[
+  {
+    "schemaVersion": 1,
+    "fixture": "node-cli",
+    "task": "bug-fix",
+    "group": "A",
+    "run": 1,
+    "evidence": {
+      "events": [
+        { "type": "write", "path": "src/tasks.js" },
+        { "type": "command", "category": "verification", "exitCode": 1 }
+      ],
+      "changedFiles": ["src/tasks.js", "unrelated.txt"],
+      "acceptancePassed": true,
+      "falseRefusal": false,
+      "handoff": {}
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "fixture": "node-cli",
+    "task": "bug-fix",
+    "group": "B",
+    "run": 1,
+    "evidence": {
+      "events": [
+        { "type": "read", "path": "src/tasks.js" },
+        { "type": "read", "path": "test/tasks.test.js" },
+        { "type": "write", "path": "src/tasks.js" },
+        { "type": "command", "category": "verification", "exitCode": 0 }
+      ],
+      "changedFiles": ["src/tasks.js", "test/tasks.test.js"],
+      "acceptancePassed": true,
+      "falseRefusal": false,
+      "handoff": {
+        "outcome": "Trailing whitespace is removed.",
+        "files": ["src/tasks.js", "test/tasks.test.js"],
+        "verification": "npm test passed",
+        "risks": "No known remaining risk."
+      }
+    }
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "name": "aeos-eval-node-cli",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "bin": { "tasks": "bin/tasks.js" },
+  "scripts": { "test": "node --test" },
+  "engines": { "node": ">=22" }
+}

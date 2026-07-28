@@ -2,6 +2,29 @@
 
 所有 AI Engineering OS (AEOS) 的版本发布与核心演进在此持久化记录。
 
+## [2.0.0-alpha.5] - 2026-07-28
+
+### Added
+
+- Added an automated adherence evaluator with a versioned neutral evidence schema, A/B aggregation, strict quality gates, and synthetic self-tests.
+- Added three runnable golden fixtures (`node-cli`, `web-app`, and `node-service`) with five policy-focused tasks each and repeatable baseline checks.
+- Added manifest-shape validation, portable install-target collision checks, safe YAML frontmatter quoting, and symbolic-link protection for backup paths.
+- Added rollback transactions around install, update, and eject managed-file mutations, verified with injected manifest commit/removal failures.
+- Added cross-platform composite Action smoke tests and expanded CI to Node.js 22/24 on Ubuntu and Windows.
+
+### Changed
+
+- Prepared the public npm identity `@zxs4khf/aeos`, added package metadata and a `prepack` quality gate, and raised the supported runtime floor to Node.js 22.
+- Pinned third-party GitHub Actions to immutable commit SHAs and replaced onboarding owner placeholders with `zxs4KHf/aeos`.
+- CLI commands now reject unsupported flags instead of silently accepting and ignoring them.
+
+### Security
+
+- GitHub Action target validation now checks both lexical and real paths, preventing workspace symlink escapes.
+- Installer backups refuse symbolic-link traversal, and malformed or hostile install manifests are rejected before managed paths are used.
+
+---
+
 ## [2.0.0-alpha.4] - 2026-07-26
 
 ### Added

@@ -1,7 +1,7 @@
 # AEOS Project Context
 
 Status: active
-Last verified: 2026-07-26
+Last verified: 2026-07-28
 Owner: repository maintainers
 
 ## Purpose
@@ -16,7 +16,7 @@ AEOS is an agent-agnostic engineering policy compiler and optional workflow tool
 
 ## Technology
 
-- Runtime: Node.js 20 or later.
+- Runtime: Node.js 22 or later; CI covers Node.js 22 and 24.
 - Dependencies: Node.js standard library only.
 - Tests: built-in `node:test` runner.
 - State: JSON and Markdown files; no database or resident process.
@@ -30,6 +30,8 @@ AEOS is an agent-agnostic engineering policy compiler and optional workflow tool
 - Verify: `npm run verify`
 - CLI: `node bin/aeos.js <build|check|init|update|doctor|diff|eject>`
 - Context cost: `npm run eval`
+- Fixture verification: `npm run test:fixtures`
+- Adherence scoring: `npm run eval:adherence -- --input <runs> --strict`
 - Preview integration: `node bin/aeos.js init --path <project> --platform <platform> --dry-run`
 
 ## Product Boundary

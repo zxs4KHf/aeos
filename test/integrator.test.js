@@ -4,7 +4,18 @@ const path = require('node:path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { INSTALL_MANIFEST, diffInstall, doctor, eject, install, parseArgs, resolveInside, update } = require('../adapters/integrator');
+const { sha256 } = require('../adapters/compiler');
+const {
+  INSTALL_MANIFEST,
+  diffInstall,
+  doctor,
+  eject,
+  install,
+  parseArgs,
+  resolveInside,
+  update,
+  validateInstallManifest
+} = require('../adapters/integrator');
 
 function readManifest(projectPath) {
   return JSON.parse(fs.readFileSync(path.join(projectPath, '.aeos', 'install-manifest.json'), 'utf8'));
@@ -42,6 +53,19 @@ test('prevents install paths from escaping the target project', () => {
   } finally {
     removeProject(projectPath);
   }
+});
+
+test('rejects malformed install manifests before using managed paths', () => {
+  assert.throws(() => validateInstallManifest({ schemaVersion: 1, platforms: ['codex'], files: [
+    { path: '../outside', sha256: 'a'.repeat(64), kind: 'entry' }
+  ] }), /invalid managed path/);
+  assert.throws(() => validateInstallManifest({ schemaVersion: 1, platforms: ['codex'], files: [
+    { path: 'AGENTS.md', sha256: 'bad', kind: 'entry' }
+  ] }), /invalid managed hash/);
+  assert.throws(() => validateInstallManifest({ schemaVersion: 1, platforms: ['codex'], files: [
+    { path: 'AGENTS.md', sha256: 'a'.repeat(64), kind: 'entry' },
+    { path: 'agents.md', sha256: 'b'.repeat(64), kind: 'entry' }
+  ] }), /duplicate managed path/);
 });
 
 test('dry-run reports operations without writing files', () => {
@@ -249,7 +273,7 @@ test('update keeps modified orphaned files but stops tracking them', () => {
     const orphanPath = path.join(projectPath, 'stale.md');
     fs.writeFileSync(orphanPath, 'user edited\n', 'utf8');
     const manifest = readManifest(projectPath);
-    manifest.files.push({ path: 'stale.md', sha256: 'not-the-current-hash', kind: 'entry' });
+    manifest.files.push({ path: 'stale.md', sha256: sha256('previous managed content\n'), kind: 'entry' });
     writeManifest(projectPath, manifest);
 
     const result = update({ targetPath: projectPath, dryRun: false, force: false });
@@ -334,6 +358,87 @@ test('refuses unmanaged changes unless force is used, then backs them up', () =>
     const backupPath = path.join(projectPath, '.aeos', 'backups', result.backupId, 'AGENTS.md');
     assert.equal(fs.readFileSync(backupPath, 'utf8'), 'user-owned instructions\n');
     assert.match(fs.readFileSync(path.join(projectPath, 'AGENTS.md'), 'utf8'), /AEOS Project Instructions/);
+  } finally {
+    removeProject(projectPath);
+  }
+});
+
+test('refuses to write backups through a symbolic-link directory', (t) => {
+  const projectPath = temporaryProject();
+  const outsidePath = temporaryProject();
+  try {
+    fs.writeFileSync(path.join(projectPath, 'AGENTS.md'), 'user-owned instructions\n', 'utf8');
+    fs.mkdirSync(path.join(projectPath, '.aeos'), { recursive: true });
+    try {
+      fs.symlinkSync(outsidePath, path.join(projectPath, '.aeos', 'backups'), process.platform === 'win32' ? 'junction' : 'dir');
+    } catch (error) {
+      if (['EPERM', 'EACCES', 'UNKNOWN'].includes(error.code)) {
+        t.skip(`symbolic links are unavailable: ${error.code}`);
+        return;
+      }
+      throw error;
+    }
+
+    assert.throws(() => install({
+      targetPath: projectPath,
+      platform: 'codex',
+      dryRun: false,
+      force: true,
+      knowledge: false
+    }), /refusing to traverse symbolic link/);
+    assert.deepEqual(fs.readdirSync(outsidePath), []);
+  } finally {
+    removeProject(projectPath);
+    removeProject(outsidePath);
+  }
+});
+
+test('rolls back an install when the manifest commit fails', () => {
+  const projectPath = temporaryProject();
+  const manifestPath = path.join(projectPath, ...INSTALL_MANIFEST.split('/'));
+  const originalRename = fs.renameSync;
+  try {
+    fs.renameSync = (source, destination) => {
+      if (path.resolve(destination) === path.resolve(manifestPath)) throw new Error('injected manifest failure');
+      return originalRename(source, destination);
+    };
+    assert.throws(() => install({
+      targetPath: projectPath,
+      platform: 'codex',
+      dryRun: false,
+      force: false,
+      knowledge: true
+    }), /managed-file transaction failed: injected manifest failure/);
+  } finally {
+    fs.renameSync = originalRename;
+  }
+  try {
+    assert.equal(fs.existsSync(path.join(projectPath, 'AGENTS.md')), false);
+    assert.equal(fs.existsSync(manifestPath), false);
+    assert.equal(fs.existsSync(path.join(projectPath, '.aeos')), false);
+  } finally {
+    removeProject(projectPath);
+  }
+});
+
+test('rolls back eject when removing the manifest fails', () => {
+  const projectPath = temporaryProject();
+  const manifestPath = path.join(projectPath, ...INSTALL_MANIFEST.split('/'));
+  const originalRemove = fs.rmSync;
+  try {
+    install({ targetPath: projectPath, platform: 'codex', dryRun: false, force: false, knowledge: false });
+    fs.rmSync = (target, options) => {
+      if (path.resolve(target) === path.resolve(manifestPath)) throw new Error('injected eject failure');
+      return originalRemove(target, options);
+    };
+    assert.throws(() => eject({ targetPath: projectPath, dryRun: false, force: false }), /managed-file transaction failed: injected eject failure/);
+  } finally {
+    fs.rmSync = originalRemove;
+  }
+  try {
+    assert.equal(fs.existsSync(path.join(projectPath, 'AGENTS.md')), true);
+    assert.equal(fs.existsSync(manifestPath), true);
+    assert.equal(doctor({ targetPath: projectPath }).healthy, true);
   } finally {
     removeProject(projectPath);
   }

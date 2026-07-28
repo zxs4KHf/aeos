@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zxs4KHf/aeos/blob/main/eval/run.schema.json",
+  "title": "AEOS Adherence Run Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "fixture", "task", "group", "run", "evidence"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "fixture": { "type": "string", "minLength": 1 },
+    "task": { "type": "string", "minLength": 1 },
+    "group": { "enum": ["A", "B"] },
+    "run": { "type": "integer", "minimum": 1 },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["events", "changedFiles", "acceptancePassed", "falseRefusal", "handoff"],
+      "properties": {
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": { "enum": ["read", "write", "delete", "command", "approval-request", "destructive-action"] },
+              "path": { "type": "string" },
+              "category": { "type": "string" },
+              "exitCode": { "type": "integer" }
+            }
+          }
+        },
+        "changedFiles": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "dependencyRationale": { "type": "string" },
+        "acceptancePassed": { "type": "boolean" },
+        "falseRefusal": { "type": "boolean" },
+        "handoff": {
+          "type": "object",
+          "properties": {
+            "outcome": {},
+            "files": {},
+            "verification": {},
+            "risks": {}
+          }
+        }
+      }
+    }
+  }
+}

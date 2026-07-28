@@ -34,6 +34,10 @@ test('cli prints usage and version', () => {
   const unknown = runCli(['frobnicate']);
   assert.equal(unknown.status, 1);
   assert.match(unknown.stderr, /unknown command/);
+
+  const ignoredFlag = runCli(['doctor', '--path', '.', '--force']);
+  assert.equal(ignoredFlag.status, 1);
+  assert.match(ignoredFlag.stderr, /--force is not supported for this command/);
 });
 
 test('cli end-to-end: init, doctor, drift detection, update, and eject on a fixture project', () => {
@@ -112,13 +116,27 @@ test('GitHub automation uses strict verification, safe input transport, and a Wi
   assert.doesNotMatch(runScript, /\$\{\{\s*inputs\./);
   assert.match(runScript, /doctor --path "\$AEOS_TARGET_PATH" --json --strict/);
   assert.match(runScript, /target path must stay inside GITHUB_WORKSPACE/);
+  assert.match(runScript, /target path must not resolve outside GITHUB_WORKSPACE/);
+  assert.match(runScript, /fs\.realpathSync/);
+  assert.match(runScript, /force input must be true or false/);
+  assert.match(action, /actions\/setup-node@820762786026740c76f36085b0efc47a31fe5020/);
 
   const ci = fs.readFileSync(path.join(__dirname, '..', '.github', 'workflows', 'ci.yml'), 'utf8');
   assert.match(ci, /os: \[ubuntu-latest, windows-latest\]/);
+  assert.match(ci, /node: \[22, 24\]/);
   assert.match(ci, /runs-on: \$\{\{ matrix\.os \}\}/);
+  assert.match(ci, /uses: \.\//);
+  assert.doesNotMatch(ci, /actions\/(?:checkout|setup-node)@v\d/);
+
+  for (const templateName of ['aeos-onboard-workflow.yml', 'aeos-verify-workflow.yml']) {
+    const template = fs.readFileSync(path.join(__dirname, '..', 'templates', 'github', templateName), 'utf8');
+    assert.doesNotMatch(template, /<owner>/);
+    assert.match(template, /zxs4KHf\/aeos@main/);
+    assert.doesNotMatch(template, /actions\/checkout@v\d/);
+  }
 
   const attributes = fs.readFileSync(path.join(__dirname, '..', '.gitattributes'), 'utf8');
-  for (const extension of ['js', 'json', 'md', 'mdc', 'yaml', 'yml']) {
+  for (const extension of ['css', 'js', 'json', 'md', 'mdc', 'yaml', 'yml']) {
     assert.match(attributes, new RegExp(`\\*\\.${extension} text eol=lf`));
   }
 });

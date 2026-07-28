@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "name": "web-app",
+  "verify": [
+    { "command": "node", "args": ["--test", "test/*.test.js"] },
+    { "command": "node", "args": ["scripts/build.js", "--check"] }
+  ]
+}

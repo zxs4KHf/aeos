@@ -2,7 +2,7 @@
 
 AEOS 是一个跨 AI 编程代理的工程策略编译器与工作流工具包。它把平台无关的工程规则维护为结构化策略，再生成 Codex、Cursor、Claude Code、Cline、GitHub Copilot、Gemini、Antigravity 和 API Agent 可读取的原生入口文件。
 
-当前版本：`2.0.0-alpha.4` · English: [README.en.md](README.en.md) · 顶层设计: [roadmap/design_2026-07.md](roadmap/design_2026-07.md)
+当前版本：`2.0.0-alpha.5` · English: [README.en.md](README.en.md) · 顶层设计: [roadmap/design_2026-07.md](roadmap/design_2026-07.md)
 
 > AEOS 是治理与上下文层，不是 Agent Runtime。它不会绕过或替代宿主平台的沙箱、权限和审批机制。
 
@@ -48,12 +48,18 @@ AEOS/
 
 ## 快速开始
 
-要求 Node.js 20 或更高版本。
+要求 Node.js 22 或更高版本，推荐使用 Node.js 24 LTS。
 
 ```bash
 npm ci
 npm run build
 npm test
+```
+
+npm 发布后也可以直接运行：
+
+```bash
+npx @zxs4khf/aeos init --path /path/to/project --platform cursor
 ```
 
 检查已提交的生成物是否与策略源一致：
@@ -100,7 +106,7 @@ node bin/aeos.js diff   --path <dir>    # 预览 update 将做的变更（支持
 node bin/aeos.js eject  --path <dir>    # 安全卸载（保留 .aeos/ 项目事实）
 ```
 
-许可证（MIT，可替换）与英文 README 已就绪；发布 npm 前仅需确认包名（裸名 `aeos` 大概率被占用，建议 scope 包名 `@<owner>/aeos`）。发布后即可 `npx` 一条命令接入。
+许可证（MIT）与英文 README 已就绪；公开包名确定为 `@zxs4khf/aeos`，npm registry 当前没有同名包。本机尚未登录 npm，实际发布需要该 scope 的 npm 身份授权。
 
 ### GitHub Action 接入
 
@@ -110,9 +116,11 @@ node bin/aeos.js eject  --path <dir>    # 安全卸载（保留 .aeos/ 项目事
 
 ```bash
 npm run eval        # 各平台入口 token 成本、指针节省、知识包体积
+npm run test:fixtures
+npm run eval:adherence -- --input <run.json-or-directory> --strict
 ```
 
-遵循度（A/B 对照）评估协议见 `eval/ADHERENCE_PROTOCOL.md`。
+遵循度评估已包含 3 个 golden fixture、15 个任务、中立证据 Schema 与 A/B 自动评分器；协议见 `eval/ADHERENCE_PROTOCOL.md`。
 
 ## 接入目标项目
 
